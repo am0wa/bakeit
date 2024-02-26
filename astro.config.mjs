@@ -6,21 +6,29 @@ import tailwind from '@astrojs/tailwind';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'Docs with Tailwind',
+			title: '🍰 BakeIT',
 			social: {
-				github: 'https://github.com/withastro/starlight',
+				github: 'https://github.com/am0wa/bakeit',
 			},
 			sidebar: [
 				{
-					label: 'Guides',
+					label: '🥚 Get Started',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', link: '/guides/example/' },
+						{ label: 'Am0wA Manifesto', link: '/learn/am0wa-manifesto/' },
+						{ label: 'Quick Start', link: '/learn/quick-start/' },
 					],
 				},
 				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					label: '🥞 Understand',
+					items: [
+						// Each item here is one entry in the navigation menu.
+						{ label: 'Psychological biases', link: '/guides/psychology/' },
+					],
+				},
+				{
+					label: '🍕 Learn More',
+					autogenerate: { directory: 'learn-more' },
 				},
 			],
 			customCss: ['./src/tailwind.css'],

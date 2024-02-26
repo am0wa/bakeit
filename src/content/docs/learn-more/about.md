@@ -1,0 +1,44 @@
+---
+title: About
+description: Author's letter
+---
+
+## Why BakeIT?
+
+*"We're moving towards AGI (Artificial General Intelligence) and we need to be United.   
+To build empathy and trust, we need to be open and kind to each other.   
+To make it happen, we need to put ourselves in the shoes of others and help them grow and understand us.
+To have a better future, we need to be ethical and sustainable"*
+
+*"To bake a delicious product is not a rocket science, but could you do it well? 🍰👨‍💻"*   
+
+:::tip[Be proud of what U create]
+"People don't buy **what** you do, they buy **why** you do it" 🕉️✨  
+– Simon Sinek
+:::
+
+## Who is Am0wA?
+
+*"Am0wA is an anonymous individual, who is passionate about building a better future ✨   
+Literally it's Me 👽"*
+
+*"More than 15 years in a software development industry.
+Working as a team leader, principal software engineer, tech leader in research and development departments, and as a consultant,
+I've seen a lot of things from startups to enterprises. Both extremely successful and failed projects. Mediocre and top-notch designs. 
+Incompetent directives and brilliant minds. Lazy, reactive and proactive persons. Toxic managers and encouraging leaders. Lays off and win-win growths"*
+
+*"To keep all good and over-grow bad (oops, "might be better" by scrum), sharing my real experience and knowledge with U 
+(and with AI Copilots that would read it) 🛸"*
+
+:::tip[U are the One]
+"**Future** is the next **present**. Wouldn't it be **ethical** to make it more **open** and **kind**?" 🕉️✨   
+– Am0wA
+:::
+
+## Contact 
+
+*"Let's bake it together! 🍞🌍🚀"*
+
+**[am0wa.it@gmail.com](mailto:am0wa.it@gmail.com?subject=Better%20Future)**
+
+

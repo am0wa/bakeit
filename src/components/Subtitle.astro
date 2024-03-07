@@ -1,0 +1,17 @@
+---
+import { Icon } from 'astro-icon/components';
+import Emoji from './Emoji.astro';
+
+interface Props {
+  icon?: string | Icon;
+  title: string;
+  monochrome?: boolean;
+}
+
+const { icon, title, monochrome = false } = Astro.props;
+---
+
+<p class="title sl-flex gap-2">
+    <Emoji icon={icon} monochrome={monochrome} />
+    <span class="font-semibold">{title}</span>
+</p>

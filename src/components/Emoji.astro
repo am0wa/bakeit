@@ -1,0 +1,15 @@
+---
+import { Icon } from 'astro-icon/components';
+import { getEmoji } from './emojiName';
+
+interface Props {
+  icon?: string | Icon;
+  monochrome?: boolean;
+  size: string;
+}
+
+const { icon, title, monochrome = false, size="1.999em" } = Astro.props;
+const emojiName = getEmoji(`${icon}`, monochrome);
+---
+
+{icon && <Icon name={emojiName} size={size} />}

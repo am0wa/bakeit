@@ -8,7 +8,8 @@ export default defineConfig({
 	integrations: [
 		icon( {
 			include: {
-				mdi: ['*'],
+				mdi: ['puzzle'],
+				twemoji: ['*'],
 				['emojione-monotone']: ['*'] // Loads entire Icon set
 			}
 		}),

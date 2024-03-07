@@ -12,13 +12,16 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.5.5",
     "@astrojs/starlight": "^0.21.1",
     "@astrojs/starlight-tailwind": "^2.0.1",
     "@astrojs/tailwind": "^5.1.0",
+    "@iconify-json/emojione-monotone": "^1.1.8",
+    "@iconify-json/mdi": "^1.1.64",
     "astro": "^4.4.11",
+    "astro-icon": "^1.1.0",
     "sharp": "^0.32.5",
     "tailwindcss": "^3.4.1",
-    "@astrojs/check": "^0.5.5",
     "typescript": "^5.3.3"
   }
 }

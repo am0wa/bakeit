@@ -1,10 +1,17 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import tailwind from '@astrojs/tailwind';
+import icon from "astro-icon";
 
 // https://astro.build/config
 export default defineConfig({
 	integrations: [
+		icon( {
+			include: {
+				mdi: ['*'],
+				['emojione-monotone']: ['*'] // Loads entire Icon set
+			}
+		}),
 		starlight({
 			title: '🍰 BakeIT',
 			social: {
@@ -33,6 +40,6 @@ export default defineConfig({
 			],
 			customCss: ['./src/tailwind.css'],
 		}),
-		tailwind({ applyBaseStyles: false }),
+		tailwind({ applyBaseStyles: false })
 	],
 });

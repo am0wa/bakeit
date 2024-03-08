@@ -33,6 +33,7 @@ export default defineConfig({
 					items: [
 						// Each item here is one entry in the navigation menu.
 						{ label: 'Psychological biases', link: '/guides/psychology/' },
+						{ label: 'Constructive feedback', link: '/guides/feedback/' },
 					],
 				},
 				{

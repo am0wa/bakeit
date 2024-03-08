@@ -118,8 +118,8 @@ Build your **own chain** of command.
 This helps to build a strong culture where it’s easy to communicate and information flows **freely** 
 supporting employees at all levels rather than strictly govern them 🧑‍🚀
 
-```
-...
+```js
+// ...
 ResearchAndFeedback.getConsumer() // Product owner 
 POVision.getConsumer()            // UIX desiner
 PORequirements.getConsumers() // [UIX Designer, Software engineer, QA Automation] 

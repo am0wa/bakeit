@@ -16,6 +16,10 @@ export default defineConfig({
 		starlight({
 			favicon: '/bakeit-gradient-favicon.svg',
 			title: '🍰 BakeIT',
+			logo: {
+				src: './src/assets/bakeit-jam.svg',
+				replacesTitle: true,
+			},
 			social: {
 				github: 'https://github.com/am0wa/bakeit',
 			},

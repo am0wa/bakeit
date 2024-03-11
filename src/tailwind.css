@@ -6,3 +6,22 @@
 Add additional Tailwind styles to this file, for example with @layer:
 https://tailwindcss.com/docs/adding-custom-styles#using-css-and-layer
 */
+
+@layer base {
+    blockquote {
+      @apply font-semibold italic
+        p-4
+        text-lg
+        text-purple-800
+        dark:text-purple-200
+        border-s-4
+        border-solid
+        border-purple-500
+    }
+    blockquote cite {
+        @apply font-normal
+        text-base
+        text-purple-950
+        dark:text-purple-50
+    }
+}

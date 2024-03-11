@@ -6,9 +6,9 @@ description: A Quick Start guide
 Welcome to BakeIT Guildelines 💜   
 An introduction to the root concepts you would use on a daily basis will be given to you 👽
 
-:::tip[“The hottest new programming language is English”]
-– Andrej Karpathy
-:::
+> “The hottest new programming language is English” 
+> <cite>– Andrej Karpathy</cite>
+
 
 * Writing a good **product** requires thinking about what your **users** are trying to do 💡
 * Baking a delicious cake requires **time**, **patience**, the **right ingredients** and the **right steps** 🥮
@@ -68,9 +68,8 @@ In Nature, cross-pollination is when one plant pollinates a plant of another var
 
 ## The Mountain Peak
 
-:::tip[“We hire smart people so they can tell us what to do”]
-– Steve Jobs
-:::
+> “We hire smart people so they can tell us what to do”
+> <cite>– Steve Jobs</cite>
 
 * **Share the vision,** "Do you see that Mountain Peak? Now, go climb it..." 🏔️
 * **Delegate desirable outcome** rather than **task** directive
@@ -84,17 +83,15 @@ The simplest thing of all isn't really even about holding the door for someone e
 ## The Root Cause
 
 :::tip[Don't optimize something that should not exist]
-"Well, I do think there’s a good framework for thinking. It is **physics**.   
-You know, the sort of first principles reasoning. Generally I think there are — what I mean by that is, boil things down to their fundamental truths and reason up from there, as opposed to reasoning by analogy"
-– Elon Musk
+_"Well, I do think there’s a good framework for thinking. It is **physics**.
+You know, the sort of first principles reasoning. Generally I think there are — what I mean by that is, boil things down to their fundamental truths and reason up from there, as opposed to reasoning by analogy"  
+– Elon Musk_
 :::
 
 ## The Peter Principle
 
-:::tip[Why things often go wrong]
-"In organisation, each person rises to the level of his own incompetence"
-– Lourence J. Peter
-:::
+> "In organisation, each person rises to the level of his own incompetence"  
+> <cite>– Lourence J. Peter</cite>
 
 This leads to Peter's corollary: 
 "In time, every post tends to be occupied by an employee who is incompetent to carry out its duties"
@@ -104,7 +101,7 @@ So, now you know, therefore will not be so frustrated anymore 🤪
 ## The Ladder of Replacement
 
 :::tip[Changes go from the bottom Up]
-"Why do U want to hire new CEO if U even do not have Executive admin?" 🤔
+Why do U want to hire new CEO if U even do not have Executive admin? 🤔
 :::
 
 So, if U want to **grow** (and stuck on the lvl of ur incompetence. LOL) – U have to **coach** your **replacement** 🪜

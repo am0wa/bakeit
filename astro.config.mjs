@@ -45,8 +45,8 @@ export default defineConfig({
 					autogenerate: { directory: 'learn-more' },
 				},
 			],
-			customCss: ['./src/tailwind.css'],
+			customCss: ['./src/tailwind.css', './src/starlight.css'],
 		}),
-		tailwind({ applyBaseStyles: false })
+		tailwind({ applyBaseStyles: true })
 	],
 });

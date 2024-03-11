@@ -1,0 +1,8 @@
+/** Override starlight inner styles */
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
+    padding: 1rem;
+    font-size: var(--sl-text-lg);
+    border-inline-start: 4px solid var(--sl-color-purple);
+    color: var(--sl-color-purple-high);
+    background-color: var(--sl-color-purple-low);
+}

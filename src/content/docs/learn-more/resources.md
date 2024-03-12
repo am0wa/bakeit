@@ -3,7 +3,8 @@ title: Resources
 description: External Resources page for further reading
 ---
 
-Learn more...
+> "There is no passion to be found playing small – in settling for a life that is less than the one you are capable of living"
+> <cite>– Nelson Mandel</cite>
 
 ## Further reading
 

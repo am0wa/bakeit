@@ -9,7 +9,6 @@ An introduction to the root concepts you would use on a daily basis will be give
 > “The hottest new programming language is English” 
 > <cite>– Andrej Karpathy</cite>
 
-
 * Writing a good **product** requires thinking about what your **users** are trying to do 💡
 * Baking a delicious cake requires **time**, **patience**, the **right ingredients** and the **right steps** 🥮
 * Quality of your **input** dictates your **output** and eventually **outcome** 🎩
@@ -68,17 +67,12 @@ In Nature, cross-pollination is when one plant pollinates a plant of another var
 
 ## The Mountain Peak
 
-> “We hire smart people so they can tell us what to do”
+> “We hire smart people, so they can tell us what to do”
 > <cite>– Steve Jobs</cite>
 
 * **Share the vision,** "Do you see that Mountain Peak? Now, go climb it..." 🏔️
 * **Delegate desirable outcome** rather than **task** directive
 * **Empower and trust** rather than control with incompetent limitations
-
-## The Open Door
-
-The most effective communication is face to face conversation.  
-The simplest thing of all isn't really even about holding the door for someone else, it's just never letting it close in the first place 🎟️
 
 ## The Root Cause
 
@@ -109,21 +103,6 @@ So, if U want to **grow** (and stuck on the lvl of ur incompetence. LOL) – U h
 * **Grow from bottom Up** otherwise the Upper lvl would not have input and become Lazily inefficient 🌿
 * **Infrastructure first** if u want to develop agriculture u need to build farms 🧑‍🌾
 
-## The Chain of Command
-
-Build your **own chain** of command.
-This helps to build a strong culture where it’s easy to communicate and information flows **freely** 
-supporting employees at all levels rather than strictly govern them 🧑‍🚀
-
-```js
-// ...
-ResearchAndFeedback.getConsumer() // Product owner 
-POVision.getConsumer()            // UIX desiner
-PORequirements.getConsumers() // [UIX Designer, Software engineer, QA Automation] 
-UIDesign.getConsumer()            // Software engineer
-NewFeature.getConsumer()          // QA Automation
-// ...                               Development/Delivery manager ...
-ReleasedApp.getConsumer()         // End User
 ```
 
 **Note:** The scheme is reduced to development team for simplicity of understanding.     

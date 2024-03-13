@@ -4,6 +4,7 @@ description: Engineering principles as a goal oriented approach
 ---
 import Card from '../../../components/Card.astro';
 import Subtitle from '../../../components/Subtitle.astro';
+import TreatMeBtn from '../../../components/TreatMeBtn.mdx';
 
 <Subtitle title={"If it looks like a duck, quacks like a duck, but needs batteries - U Have the wrong abstraction"} icon="twemoji:duck"/>
 
@@ -17,19 +18,14 @@ import Subtitle from '../../../components/Subtitle.astro';
 * **Modularity** – break down large systems into smaller independent reusable modules 🧩
 * **Anticipation of Change** – consider future needs when designing your software 🛸
 * **Maintainability** – write features that's easy to understand and modify 🚑
-* **Scalability** – system s'd increased demand without failing or excessively slowing down 🥖
+* **Scalability** – adapt to increased demand without failing or excessively slowing down 🥖
 * **Testability** – design functionality in away easy to test, identify and fix bugs early 🐞
 * **Security** – design with security in mind for threats protection and reliable functioning 🕵️
-* **Continuous Delivery** 📯
-* **Resiliency** – ability to withstand or recover quickly: load balance, fault tolerance, graceful degradation 🛡️
-  - **Circuit Breaker** – **Fail Fast**, allows to perform default or fallback operations 🧯
-  - **Redundancy** – if one instance fails another should take over 🧻
-  - **Backpressure** – throttle incoming workload to not exceed throughput capacity 🚰
-  - **Bulkhead Pattern** – failure of one shouldn't lead to failure of entire system 🚢
-  - **Fallback** – default value (or cache) to rely on in case of failure ☎️
-  - **Retry** – make several attempts before failing 🛎️
-  - **Timeout** – limit time until response instead of infinite waiting ⌛
+* **Resiliency** – ability to withstand or recover quickly: proactive monitoring, decentralisation, load balance, fault tolerance, graceful degradation, fast recovery 🍀️
+* **Continuous Delivery** - iterative development, frequent releases, instant rollbacks 📯
 
+_"Imho, regardless of the job title, whole team would benefit from knowing these principles"_
+<TreatMeBtn />
 
 ### <h3 class="hidden">KISS</h3>
 <Card title="KISS" icon="emoji:kiss-mark">
@@ -155,19 +151,6 @@ import Subtitle from '../../../components/Subtitle.astro';
   Write failing test. Make it pass. Refactor
 </Card>
 
-----
-
-### <h3 class="hidden">4 OOP Principles</h3>
-<Card title="4 Object-Oriented Programming Principles" icon="emoji:four-leaf-clover">
-  * **Abstraction** focusing on essential features of entity without implementation details
-  * **Encapsulation** hiding the implementation details exposing only the clean interfaces
-  * **Inheritance** ability of children to inherit functionality from a parent by extending it
-  * **Polymorphism** ability of implementation to take multiple forms of abstraction
-
-  **"Composition over Inheritance"** suggests it's better to compose objects **(HAS-A)** to achieve polymorphic behavior & code reuse
-  rather than inheriting **(IS-A)** from a parent
-</Card>
-
 ### <h3 class="hidden">SOLID</h3>
 <Card title="SOLID" icon="emoji:gem-stone">
   * **`S`ingle Responcibility principle `(SRP)`**<br/>
@@ -182,7 +165,32 @@ import Subtitle from '../../../components/Subtitle.astro';
   _"Depend on abstraction not on concretion"_
 </Card>
 
+### <h3 class="hidden">4 OOP Principles</h3>
+<Card title="4 Object-Oriented Programming Principles" icon="emoji:man-beard">
+  * **Abstraction** focusing on essential features of entity without implementation details
+  * **Encapsulation** hiding the implementation details exposing only the clean interfaces
+  * **Inheritance** ability of children to inherit functionality from a parent by extending it
+  * **Polymorphism** ability of implementation to take multiple forms of abstraction
+
+  **"Composition over Inheritance"** suggests it's better to compose objects **(HAS-A)** to achieve polymorphic behavior & code reuse
+  rather than inheriting **(IS-A)** from a parent
+</Card>
+
+### <h3 class="hidden">Resiliency Principles</h3>
+<Card title="Resiliency Principles" icon="emoji:four-leaf-clover">
+  * **Circuit Breaker** – **Fail Fast**, allows to perform default or fallback operations 🧯
+  * **Redundancy** – if one instance fails another should take over 🧻
+  * **Backpressure** – throttle incoming workload to not exceed throughput capacity 🚰
+  * **Bulkhead Pattern** – failure of one shouldn't lead to failure of entire system 🚢
+  * **Fallback** – default value (or cache) to rely on in case of failure ☎️
+  * **Retry** – make several attempts before failing 🛎️
+  * **Timeout** – limit time until response instead of infinite waiting ⌛
+
+  **Proactive monitoring & alerting** are crucial for system's **Availability** & fast recovery on the road to **zero downtime** 🟢
+</Card>
+
 ### Further Reading
 
 * [Google Tech Dev Guide](https://techdevguide.withgoogle.com/paths/principles/)
 * [Microsoft Application resiliency patterns](https://learn.microsoft.com/en-us/dotnet/architecture/cloud-native/application-resiliency-patterns)
+* [YANGI by Martin Fowler](https://martinfowler.com/bliki/Yagni.html)

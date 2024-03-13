@@ -8,7 +8,12 @@ description: External Resources page for further reading
 
 ## Further reading
 
-- [Agile Manifesto](https://agilemanifesto.org/) Agile Manifesto
-- [Material Design](https://m3.material.io/foundations) Material Design
-- [Martin Fowler](https://martinfowler.com/) Martin Fowler's blog
-- [Clean Code](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882) Clean Code by Robert C. Martin
+- [Manifesto for Agile Software Development](https://agilemanifesto.org/) 
+- [Material Design](https://m3.material.io/foundations) by Google
+- ["Clean Code"](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882) by Robert C. Martin
+- ["Refactoring"](https://martinfowler.com/) by Martin Fowler
+- ["How to Win Friends & Influence People"](https://a.co/d/9YNueWA) by Dale Carnegie
+- ["Upstream: The Quest to Solve Problems Before They Happen"](https://a.co/d/bF76tmK) by Dean Heath
+- ["Yes! 60 Secrets from the Science of Persuasion"]() by Noah J. Goldstein, Robert B. Cialdini...
+- [“Break the Rules”](https://www.amazon.com/Break-Rules-Counter-Conventional-Mindsets-Entrepreneurs/dp/1394153015) by John Mullins
+- ["Atomic Habits"](https://a.co/d/52ZaFJk) by James Clear

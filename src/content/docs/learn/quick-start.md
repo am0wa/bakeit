@@ -4,16 +4,16 @@ description: A Quick Start guide
 ---
 
 Welcome to BakeIT Guildelines 💜   
-An introduction to the root concepts you would use on a daily basis will be given to you 👽
+An introduction to the root concepts U would use on a daily basis will be given to U 👽
 
 > “The hottest new programming language is English” 
 > <cite>– Andrej Karpathy</cite>
 
-* Writing a good **product** requires thinking about what your **users** are trying to do 💡
+* Writing a **good product** requires thinking about what Ur **users** are trying to do 💡
 * Baking a delicious cake requires **time**, **patience**, the **right ingredients** and the **right steps** 🥮
-* Quality of your **input** dictates your **output** and eventually **outcome** 🎩
+* Quality of Ur **input** dictates Ur **output** and eventually **outcome** 🎩
 * U are the **partner** of the company, **not slave** 🤝
-* The **more choices** the longer it takes to decide which one is the best 🤔
+* The **more choices** the **longer it takes** to decide which one is the best 🤔
 
 ## Hick's Law
 
@@ -40,10 +40,10 @@ RT = a + b log2 (n)
 "Roughly **80%** of consequences come out from **20%** of causes (**vital few**)"
 :::
 
-* 20% of your actions will likely drive 80% of your results
-* 20% of your tasks will likely produce 80% of value
-* 20% of your customers will likely lead to 80% of your sales
-* 20% of your products will likely make 80% of your profits
+* **20%** of Ur **actions** will likely drive **80%** of Ur **results**
+* **20%** of Ur **tasks** will likely produce **80%** of **value**
+* **20%** of Ur **customers** will likely lead to **80%** of Ur **sales**
+* **20%** of Ur **products** will likely make **80%** of Ur **profits**
 
 ## Miller’s Law
 
@@ -88,7 +88,7 @@ You know, the sort of first principles reasoning. Generally I think there are �
 > <cite>– Lourence J. Peter</cite>
 
 This leads to Peter's corollary: 
-"In time, every post tends to be occupied by an employee who is incompetent to carry out its duties"
+_"In time, every post tends to be occupied by an employee who is incompetent to carry out its duties"_
 
 So, now you know, therefore will not be so frustrated anymore 🤪 
 
@@ -98,13 +98,10 @@ So, now you know, therefore will not be so frustrated anymore 🤪
 Why do U want to hire new CEO if U even do not have Executive admin? 🤔
 :::
 
-So, if U want to **grow** (and stuck on the lvl of ur incompetence. LOL) – U have to **coach** your **replacement** 🪜
+So, if U want to **grow** (and stuck on the lvl of ur incompetence. LOL) – U have to **coach** Ur **replacement** 🪜
 
 * **Grow from bottom Up** otherwise the Upper lvl would not have input and become Lazily inefficient 🌿
-* **Infrastructure first** if u want to develop agriculture u need to build farms 🧑‍🌾
-
-**Note:** The scheme is reduced to development team for simplicity of understanding.     
-Important chains as Shareholders, Executive Leadership, Operation, Marketing, Sales are implicitly hidden under `...` notation 🕵️
+* **Infrastructure first** if U want to develop agriculture U need to build farms 🧑‍🌾
 
 ## Dunbar's Number
 

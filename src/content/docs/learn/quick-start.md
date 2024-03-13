@@ -103,8 +103,6 @@ So, if U want to **grow** (and stuck on the lvl of ur incompetence. LOL) – U h
 * **Grow from bottom Up** otherwise the Upper lvl would not have input and become Lazily inefficient 🌿
 * **Infrastructure first** if u want to develop agriculture u need to build farms 🧑‍🌾
 
-```
-
 **Note:** The scheme is reduced to development team for simplicity of understanding.     
 Important chains as Shareholders, Executive Leadership, Operation, Marketing, Sales are implicitly hidden under `...` notation 🕵️
 

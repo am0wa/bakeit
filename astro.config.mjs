@@ -40,6 +40,7 @@ export default defineConfig({
 						{ label: 'Constructive feedback', link: '/guides/feedback/' },
 						{ label: 'Transformational leadership', link: '/guides/leadership/' },
 						{ label: 'Engineering principles', link: '/guides/engineering/' },
+						{ label: 'Design principles', link: '/guides/ux/' },
 					],
 				},
 				{

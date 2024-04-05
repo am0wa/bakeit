@@ -24,20 +24,20 @@ hero:
 ---
 
 import { CardGrid } from '@astrojs/starlight/components';
-import Card from '../../components/Card.astro';
+import ClickableCard from '../../components/ClickableCard.astro';
 
 
 <CardGrid stagger>
-	<Card title="Documentation that delights" icon="duck" monochrome={false} href={'learn/quick-start'}>
+	<ClickableCard title="Documentation that delights" icon="duck" href={'learn/quick-start'} monochrome={false} colour="yellow">
     Job ready **knowledge to thrive**, no matter Ur title
-	</Card>
-	<Card title="Vanilla development ethics" icon="rocket" monochrome={false} href={'/guides/engineering/'}>
+	</ClickableCard>
+	<ClickableCard title="Vanilla development ethics" icon="rocket" href={'/guides/engineering/'} monochrome={false} colour="purple">
 		Impartial, **technology agnostic** development principles built on **solid ground**
-	</Card>
-	<Card title="See the bigger picture" icon="film-frames" monochrome={false} href={'/guides/psychology/'}>
+	</ClickableCard>
+	<ClickableCard title="See the bigger picture" icon="film-frames" href={'/guides/psychology/'} monochrome={false} colour="green">
 		Guidelines that **unite and connect** the dots across roles and parts of the process
-	</Card>
-	<Card title="Look up" icon="bullseye" monochrome={false} href={'/learn/am0wa-manifesto/'}>
-		Learn **more** in <a class="no-underline" href={'/learn/am0wa-manifesto/'}>**Am0wA Manifesto**</a>
-	</Card>
+	</ClickableCard>
+	<ClickableCard title="Look up" icon="direct-hit" href={'/learn/am0wa-manifesto/'} monochrome={false} colour="red">
+		Learn **more** in <span class={"text-purple-500 dark:text-purple-400"}>**Am0wA Manifesto**</span>
+	</ClickableCard>
 </CardGrid>

@@ -10,13 +10,15 @@ export interface Props {
 	title: string;
 	monochrome?: boolean;
 	href?: string;
+	clickable?: boolean;
+	colour?: 'purple' | 'orange' | 'green' | 'red' | 'blue';
 }
 
-const { icon, title, wrapIcon = true, monochrome = false, href } = Astro.props;
+const { icon, title, wrapIcon = true, monochrome = false, href, colour = '', clickable } = Astro.props;
 const emojiName = getEmoji(`${icon}`, monochrome);
 ---
 
-<article class={`card sl-flex`}>
+<article class={`card sl-flex ${colour} ${clickable && 'clickable'}`}>
 		<p class="title sl-flex">
 			{/* @ts-ignore see https://github.com/natemoo-re/astro-icon/issues/213 */}
 			{icon && <Icon name={emojiName} class={wrapIcon && "icon"} size="1.666em" />}
@@ -32,31 +34,37 @@ const emojiName = getEmoji(`${icon}`, monochrome);
 	}
 	.card-clickable {
 		cursor: pointer;
+		border-radius: 0.5rem;
 	}
 	.card {
 		--sl-card-border: var(--sl-color-purple);
 		--sl-card-bg: var(--sl-color-purple-low);
 		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.33rem;
 		background-color: var(--sl-color-black);
 		padding: clamp(1rem, calc(0.125rem + 3vw), 2.5rem);
 		flex-direction: column;
 		gap: clamp(0.5rem, calc(0.125rem + 1vw), 1rem);
 	}
-	.card:nth-child(4n + 1) {
+	.card:nth-child(4n + 1), .card.orange {
 		--sl-card-border: var(--sl-color-orange);
 		--sl-card-bg: var(--sl-color-orange-low);
 	}
-	.card:nth-child(4n + 3) {
+	.card:nth-child(4n + 3), .card.green {
 		--sl-card-border: var(--sl-color-green);
 		--sl-card-bg: var(--sl-color-green-low);
 	}
-	.card:nth-child(4n + 4) {
+	.card:nth-child(4n + 4), .card.red {
 		--sl-card-border: var(--sl-color-red);
 		--sl-card-bg: var(--sl-color-red-low);
 	}
-	.card:nth-child(4n + 5) {
+	.card:nth-child(4n + 5), .card.blue {
 		--sl-card-border: var(--sl-color-blue);
 		--sl-card-bg: var(--sl-color-blue-low);
+	}
+	.card.purple {
+		--sl-card-border: var(--sl-color-purple);
+		--sl-card-bg: var(--sl-color-purple-low);
 	}
 	.title {
 		font-weight: 600;

@@ -18,7 +18,7 @@ hero:
     file: ../../assets/bakeit-logo.svg
   actions:
     - text: LEARN
-      link: /learn/am0wa-manifesto/
+      link: /learn/quick-start/
       icon: right-arrow
       variant: primary
 ---
@@ -28,16 +28,16 @@ import Card from '../../components/Card.astro';
 
 
 <CardGrid stagger>
-	<Card title="Documentation that delights" icon="duck" monochrome={false}>
+	<Card title="Documentation that delights" icon="duck" monochrome={false} href={'learn/quick-start'}>
     Job ready **knowledge to thrive**, no matter Ur title
 	</Card>
-	<Card title="Vanilla development ethics" icon="rocket" monochrome={false}>
+	<Card title="Vanilla development ethics" icon="rocket" monochrome={false} href={'/guides/engineering/'}>
 		Impartial, **technology agnostic** development principles built on **solid ground**
 	</Card>
-	<Card title="See the bigger picture" icon="film-frames" monochrome={false}>
+	<Card title="See the bigger picture" icon="film-frames" monochrome={false} href={'/guides/psychology/'}>
 		Guidelines that **unite and connect** the dots across roles and parts of the process
 	</Card>
-	<Card title="Look up" icon="bullseye" monochrome={false}>
-		Learn **more** in [Am0wA Manifesto](/learn/am0wa-manifesto/)
+	<Card title="Look up" icon="bullseye" monochrome={false} href={'/learn/am0wa-manifesto/'}>
+		Learn **more** in <a class="no-underline" href={'/learn/am0wa-manifesto/'}>**Am0wA Manifesto**</a>
 	</Card>
 </CardGrid>

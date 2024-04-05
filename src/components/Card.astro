@@ -4,27 +4,35 @@ import type { Icon as OneOfIcon } from "virtual:astro-icon";
 import { Icon } from 'astro-icon/components'
 import { getEmoji } from './emojiName';
 
-interface Props {
+export interface Props {
 	icon?: string | OneOfIcon;
 	wrapIcon?: boolean;
 	title: string;
 	monochrome?: boolean;
+	href?: string;
 }
 
-const { icon, title, wrapIcon = true, monochrome = false } = Astro.props;
+const { icon, title, wrapIcon = true, monochrome = false, href } = Astro.props;
 const emojiName = getEmoji(`${icon}`, monochrome);
 ---
 
-<article class="card sl-flex">
-	<p class="title sl-flex">
-		{/* @ts-ignore see https://github.com/natemoo-re/astro-icon/issues/213 */}
-		{icon && <Icon name={emojiName} class={wrapIcon && "icon"} size="1.666em" />}
-		<span set:html={title} />
-	</p>
-	<div class="body"><slot /></div>
+<article class={`card sl-flex`}>
+		<p class="title sl-flex">
+			{/* @ts-ignore see https://github.com/natemoo-re/astro-icon/issues/213 */}
+			{icon && <Icon name={emojiName} class={wrapIcon && "icon"} size="1.666em" />}
+			{href ? <a href={href}>{title}</a> : <span set:html={title} />}
+		</p>
+		<div class="body"><slot /></div>
 </article>
 
 <style>
+	.card a {
+		text-decoration: none;
+		color: var(--sl-color-white);
+	}
+	.card-clickable {
+		cursor: pointer;
+	}
 	.card {
 		--sl-card-border: var(--sl-color-purple);
 		--sl-card-bg: var(--sl-color-purple-low);

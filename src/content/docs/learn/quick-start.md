@@ -15,6 +15,9 @@ An introduction to the root concepts U would use on a daily basis will be given 
 * U are the **partner** of the company, **not slave** 🤝
 * The **more choices** the **longer it takes** to decide which one is the best 🤔
 
+> “It’s not the hours you put in your work that counts, it’s the work you put in the hours”
+> <cite>– Sam Ewing</cite>
+
 ## Hick's Law
 
 :::tip[The fewer the easier to pick]
@@ -125,4 +128,4 @@ The theory of Dunbar’s number holds that the tightest circle has just five peo
 People migrate in and out of these layers, but the idea is that space has to be carved out for any new entrants 🛂
 
 To overcome this limitation and maintain the level of effectiveness we need the common ground – the purpose of BakeIT and
-[Am0wA Manifesto](http://localhost:4322/learn/am0wa-manifesto/)
+[Am0wA Manifesto](/learn/am0wa-manifesto/)

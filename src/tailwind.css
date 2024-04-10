@@ -38,6 +38,7 @@ https://tailwindcss.com/docs/adding-custom-styles#using-css-and-layer
 
     .clickable {
         cursor: pointer;
+        user-select: none;
     }
     .clickable:hover {
         @apply border-purple-500

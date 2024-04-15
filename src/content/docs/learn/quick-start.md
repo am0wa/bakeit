@@ -60,6 +60,17 @@ RT = a + b log2 (n)
 
 Any element or action that isn’t helping users achieve their goal is working against them 🎯
 
+## Eating The Frog
+
+> "If it's your job to eat a frog, it's best to do it first thing in the morning. And If it's your job to eat two frogs, it's best to eat the biggest one first"
+> <cite>– Mark Twain</cite>
+
+* **Identify** the most impactful and challenging task 🐸
+* **Do it first** before other todos 👽
+* **Sense of accomplishment** will give U the energy to tackle the rest of the day ☀️
+
+Completing your most difficult task early boosts productivity and motivation
+
 ## Cross-Pollination of Knowledge
 
 :::tip[The metaphor of cross-pollination]

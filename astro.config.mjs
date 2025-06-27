@@ -37,8 +37,9 @@ export default defineConfig({
 					items: [
 						// Each item here is one entry in the navigation menu.
 						{ label: 'Psychological biases', link: '/guides/psychology/' },
-						{ label: 'Constructive feedback', link: '/guides/feedback/' },
 						{ label: 'Transformational leadership', link: '/guides/leadership/' },
+						{ label: 'Problem solving', link: '/guides/problem-solving/' },
+						{ label: 'Constructive feedback', link: '/guides/feedback/' },
 						{ label: 'Engineering principles', link: '/guides/engineering/' },
 						{ label: 'Design principles', link: '/guides/ux/' },
 					],

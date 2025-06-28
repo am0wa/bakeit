@@ -1,0 +1,97 @@
+---
+const quadrants = [
+    {
+        title: "DO",
+        description: "Tasks with deadlines or consequences",
+        style: "background-color:#5FB49C;",
+    },
+    {
+        title: "SCHEDULE",
+        description: "Tasks with unclear deadlines that drive long-term success",
+        style: "background-color:#F7B267;",
+    },
+    {
+        title: "DELEGATE",
+        description: "Tasks that must be done, yet don’t require Ur skill set",
+        style: "background-color:#4D7AC7;",
+    },
+    {
+        title: "DELETE",
+        description: "Distractions and unnecessary tasks",
+        style: "background-color:#F7A399;",
+    },
+];
+---
+
+<style>
+    .matrix {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 0.5rem;
+        max-width: 600px;
+        margin: 0 2rem 0 auto;
+    }
+    .matrix-quadrant {
+        display: flex;
+        margin-top: 0 !important;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem 1.5rem;
+        border-radius: 12px;
+        min-height: 180px;
+        font-size: 1.15rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        color: var(--sl-color-white);
+    }
+    .matrix-labels {
+        display: flex;
+        justify-content: space-around;
+        margin: 0 auto 0 auto;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    .matrix-side-labels {
+        display: flex;
+        justify-content: space-around;
+        padding-top: 5rem;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-right: 1rem;
+        white-space: nowrap;
+    }
+    .matrix-container {
+        position: relative;
+        max-width: 650px;
+        margin: 0 auto 0 auto;
+    }
+    @media (max-width: 700px) {
+        .matrix, .matrix-labels { max-width: 98vw; }
+    }
+</style>
+
+<div class="matrix-container">
+    <div style="display:flex;">
+        <div class="matrix-side-labels">
+            <div>Important</div>
+            <div>Not important</div>
+        </div>
+        <div>
+            <div class="matrix-labels">
+                <span>Urgent</span>
+                <span>Not urgent</span>
+            </div>
+            <div class="matrix">
+                {quadrants.map((q) => (
+                  <div class="matrix-quadrant" style={q.style}>
+                      <strong>{q.title}</strong>
+                      <div>{q.description}</div>
+                  </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</div>

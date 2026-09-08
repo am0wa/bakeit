@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # Vim
 *.swp
+
+#AI
+.claude/plans 

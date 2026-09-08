@@ -1,6 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer base, starlight, theme, components, utilities;
+
+@import '@astrojs/starlight-tailwind';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+    /* Preferred accent color. Violet, closest to Starlight’s defaults is Indigo. */
+    --color-accent-50: var(--color-violet-50);
+    --color-accent-100: var(--color-violet-100);
+    --color-accent-200: var(--color-violet-200);
+    --color-accent-300: var(--color-violet-300);
+    --color-accent-400: var(--color-violet-400);
+    --color-accent-500: var(--color-violet-500);
+    --color-accent-600: var(--color-violet-600);
+    --color-accent-700: var(--color-violet-700);
+    --color-accent-800: var(--color-violet-800);
+    --color-accent-900: var(--color-violet-900);
+    --color-accent-950: var(--color-violet-950);
+    /* Preferred gray scale is Zinc — already the `@astrojs/starlight-tailwind` default. */
+}
 
 /*
 Add additional Tailwind styles to this file, for example with @layer:
@@ -25,17 +43,6 @@ https://tailwindcss.com/docs/adding-custom-styles#using-css-and-layer
         dark:text-purple-50
     }
 
-    .action {
-        @apply bg-purple-500
-        dark:bg-purple-400
-    }
-    .action:hover {
-        @apply bg-purple-400
-        dark:bg-purple-500
-        text-purple-900
-        dark:text-purple-100
-    }
-
     .clickable {
         cursor: pointer;
         user-select: none;
@@ -44,5 +51,27 @@ https://tailwindcss.com/docs/adding-custom-styles#using-css-and-layer
         @apply border-purple-500
         dark:border-purple-400
         bg-purple-50 dark:bg-purple-950
+    }
+}
+
+/*
+Starlight renamed the hero action button from `.action` to `.sl-link-button` and styles it in
+its own `starlight` cascade layer, so these overrides live in `components` — declared above
+`starlight` in the layer order at the top of this file — instead of `base`.
+*/
+@layer components {
+    .sl-link-button.primary {
+        @apply bg-purple-500
+        border-purple-500
+        dark:bg-purple-400
+        dark:border-purple-400
+    }
+    .sl-link-button.primary:hover {
+        @apply bg-purple-400
+        border-purple-400
+        text-purple-900
+        dark:bg-purple-500
+        dark:border-purple-500
+        dark:text-purple-100
     }
 }

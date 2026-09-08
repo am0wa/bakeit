@@ -1,10 +1,13 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import icon from "astro-icon";
 
 // https://astro.build/config
 export default defineConfig({
+	vite: {
+		plugins: [tailwindcss()],
+	},
 	integrations: [
 		icon( {
 			include: {
@@ -20,9 +23,9 @@ export default defineConfig({
 				src: './src/assets/bakeit-jam.svg',
 				replacesTitle: true,
 			},
-			social: {
-				github: 'https://github.com/am0wa/bakeit',
-			},
+			social: [
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/am0wa/bakeit' },
+			],
 			sidebar: [
 				{
 					label: '🥚 Get Started',
@@ -46,11 +49,10 @@ export default defineConfig({
 				},
 				{
 					label: '🍕 Learn More',
-					autogenerate: { directory: 'learn-more' },
+					items: [{ autogenerate: { directory: 'learn-more' } }],
 				},
 			],
 			customCss: ['./src/tailwind.css', './src/starlight.css'],
 		}),
-		tailwind({ applyBaseStyles: true })
 	],
 });

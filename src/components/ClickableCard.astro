@@ -19,27 +19,33 @@ const { href, ...cardProps } = Astro.props;
 ---
 <clickable-card data-href={href}>
     <Card {...cardProps} clickable={true}>{<slot />}</Card>
-</clickable-card>
+    <!-- `is:inline` keeps this script nested inside <clickable-card>. A bundled script is
+         hoisted to a sibling position instead, which makes it a direct child of a wrapping
+         <CardGrid> and shifts that grid's `:nth-child(2n)` stagger onto the wrong cards. -->
+    <script is:inline>
+      if (!customElements.get('clickable-card')) {
+        customElements.define(
+          'clickable-card',
+          class ClickableCard extends HTMLElement {
+            constructor() {
+              super();
 
-<script>
-  class ClickableCard extends HTMLElement {
-    constructor() {
-      super();
+              // Read the target from the data attribute.
+              const href = this.dataset.href;
+              const card = this.querySelector('article.card');
 
-      // Read the message from the data attribute.
-      const href = this.dataset.href;
-      const card = this.querySelector('article.card');
-
-        card?.addEventListener('click', () => {
-          console.log(`Card Clicked ${href}`);
-          if (href) {
-            window.location.href = href;
+              card?.addEventListener('click', () => {
+                console.log(`Card Clicked ${href}`);
+                if (href) {
+                  window.location.href = href;
+                }
+              });
+            }
           }
-      });
-    }
-  }
-  customElements.define('clickable-card', ClickableCard);
-</script>
+        );
+      }
+    </script>
+</clickable-card>
 
 <!--<script>
     /* Note: If U add plain script have multiple <Card> components on a page,

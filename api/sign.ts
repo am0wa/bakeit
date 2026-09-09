@@ -1,18 +1,21 @@
 /**
  * POST /api/sign  { handle: string }
  *
- * Turns a web form into a git commit. The page is fully static, so this function is the
- * only place a write can happen - and the only place the GitHub token exists.
+ * Turns a web form into a git contribution. The page is fully static, so this function is
+ * the only place a write can happen - and the only place the GitHub token exists.
  *
  * Flow: validate shape -> confirm the account exists -> confirm it has not already
- * signed -> commit `src/data/signers/<handle>.json`. Vercel's auto-build on push to
- * `main` then re-renders the wall, roughly a minute later.
+ * signed -> add `src/data/signers/<handle>.json`. By default that arrives as a PULL
+ * REQUEST, so nothing reaches `main` (and no rebuild happens) until it is merged; the
+ * wall re-renders on the build that the merge triggers.
  *
  * Env:
  *   GITHUB_TOKEN  (required)  fine-grained PAT, this repo only, `Contents: write`.
  *                            MUST NOT be PUBLIC_-prefixed or it lands in the client bundle.
- *   SIGN_MODE     'commit' (default) | 'pr'  - `pr` opens a pull request instead of
- *                            committing to main, restoring per-signature approval.
+ *   SIGN_MODE     'pr' (default) | 'commit'  - `pr` opens a pull request per signature
+ *                            so nothing reaches `main` without an explicit merge; spam
+ *                            cannot push to main or trigger a production rebuild.
+ *                            Set 'commit' to write straight to main (instant, unmoderated).
  *   GITHUB_OWNER / GITHUB_REPO / GITHUB_BRANCH  optional overrides.
  */
 import type { SignResponse } from '../src/components/signManifesto';
@@ -23,8 +26,17 @@ const BRANCH = process.env.GITHUB_BRANCH ?? 'main';
 const SIGNERS_DIR = 'src/data/signers';
 const API = 'https://api.github.com';
 
-/** Blast-radius limit, not a real rate limiter - see the plan's honest scorecard. */
-const MAX_NEW_PER_HOUR = 30;
+/**
+ * Blast-radius limits. Neither is a real rate limiter - they cap the mess so cleanup
+ * stays cheap. Both are global rather than per-visitor: a stateless function has no
+ * store to key an IP off, and adding one is the infrastructure this design avoids.
+ *
+ * The metric has to match the mode. In PR mode signatures live on `sign/*` branches and
+ * never touch the base branch until merged, so counting commits there measures NOTHING -
+ * that was a real hole. Count the review queue instead.
+ */
+const MAX_NEW_PER_HOUR = 30; // commit mode: commits on the base branch, per hour
+const MAX_PENDING_PRS = 25; // PR mode: open signature PRs. Keep < 100 (see per_page).
 
 /**
  * GitHub's own username grammar. Deliberately duplicated from
@@ -42,6 +54,18 @@ function normalizeHandle(raw: string): string {
     .replace(/^@+/, '')
     .replace(/\/+$/, '')
     .trim();
+}
+
+/**
+ * Weak by construction: a script can omit or forge `Origin`, so this is NOT a control -
+ * it only turns away casual cross-site embedding, for three lines and no dependency.
+ * Absent header is allowed on purpose (curl, and some privacy tooling, send none).
+ */
+const ALLOWED_ORIGINS = ['https://www.bakeit.dev', 'https://bakeit.dev', 'http://localhost:4321'];
+
+function originAllowed(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  return origin === null || ALLOWED_ORIGINS.includes(origin);
 }
 
 function json(body: SignResponse, status = 200): Response {
@@ -78,6 +102,35 @@ interface GhEntry {
   type: string;
 }
 
+/**
+ * Is the queue (or commit rate) already at its cap? Fails OPEN: a GitHub hiccup must not
+ * block legitimate signing, and a missed cap only costs noise that is cheap to clear.
+ */
+async function overCapacity(token: string, mode: 'pr' | 'commit'): Promise<boolean> {
+  if (mode === 'commit') {
+    // Commits DO land on the base branch in this mode, so this measure is the right one.
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const res = await gh(
+      `/repos/${OWNER}/${REPO}/commits?path=${encodeURIComponent(SIGNERS_DIR)}` +
+        `&since=${since}&per_page=100&sha=${BRANCH}`,
+      token,
+    );
+    if (!res.ok) return false;
+    return ((await res.json()) as unknown[]).length >= MAX_NEW_PER_HOUR;
+  }
+
+  // PR mode: count what actually accumulates - unmerged signature PRs. No pagination
+  // needed because MAX_PENDING_PRS < per_page, so a full first page is already over.
+  const res = await gh(
+    `/repos/${OWNER}/${REPO}/pulls?state=open&base=${BRANCH}&per_page=100`,
+    token,
+  );
+  if (!res.ok) return false;
+  const open = (await res.json()) as { head?: { ref?: string } }[];
+  // Match on the BRANCH PREFIX our own code sets, not the PR title, which is renameable.
+  return open.filter((pr) => pr.head?.ref?.startsWith('sign/')).length >= MAX_PENDING_PRS;
+}
+
 /** base64 without Buffer, so this stays portable across runtimes. */
 function toBase64(text: string): string {
   const bytes = new TextEncoder().encode(text);
@@ -86,9 +139,20 @@ function toBase64(text: string): string {
   return btoa(binary);
 }
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return json({ status: 'error', message: 'Use POST.' }, 405);
+/**
+ * A NAMED METHOD EXPORT, not `export default`. Vercel's Node runtime only takes the
+ * Web-handler path when a module exports `fetch` or a named HTTP method; a bare default
+ * function is treated as a legacy `(req, res)` handler, so it would be called with an
+ * `IncomingMessage`, the returned Response discarded, and the request left unanswered
+ * until it times out (504) rather than failing loudly. This form also gives us a 405 on
+ * every other method for free, which is why there is no method guard here.
+ */
+export async function POST(request: Request): Promise<Response> {
+  // Origin first: it is the cheapest and most definitive rejection, it costs no config
+  // and no network, and putting it ahead of the token check means a bad-origin request
+  // never touches configuration (and cannot be masked by a misconfigured deployment).
+  if (!originAllowed(request)) {
+    return json({ status: 'error', message: 'Bad origin.' }, 403);
   }
 
   const token = process.env.GITHUB_TOKEN;
@@ -121,8 +185,20 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
 
+  const mode = process.env.SIGN_MODE === 'commit' ? 'commit' : 'pr';
+
   try {
-    // 1. Does the account exist? Authenticated: 5,000/hr rather than 60/hr.
+    // 1. Capacity FIRST, deliberately. Every request spends GitHub API calls from a
+    // shared 5,000/hr token budget, and exhausting it breaks signing for everyone - so
+    // once we are at the cap a flood must cost one call per request, not four.
+    if (await overCapacity(token, mode)) {
+      return json({
+        status: 'throttled',
+        message: 'There are a lot of signatures awaiting review — try again in a bit.',
+      });
+    }
+
+    // 2. Does the account exist? Authenticated: 5,000/hr rather than 60/hr.
     const userRes = await gh(`/users/${encodeURIComponent(handle)}`, token);
     if (userRes.status === 404) {
       return json({
@@ -140,7 +216,7 @@ export default async function handler(request: Request): Promise<Response> {
     const fileName = `${canonical.toLowerCase()}.json`;
     const filePath = `${SIGNERS_DIR}/${fileName}`;
 
-    // 2. One directory listing answers both "already signed?" and "how many total?".
+    // 3. One directory listing answers both "already signed?" and "how many total?".
     const dirRes = await gh(
       `/repos/${OWNER}/${REPO}/contents/${SIGNERS_DIR}?ref=${BRANCH}`,
       token,
@@ -162,23 +238,6 @@ export default async function handler(request: Request): Promise<Response> {
       });
     }
 
-    // 3. Blast-radius cap: if the signers path is being hammered, stop writing.
-    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const commitsRes = await gh(
-      `/repos/${OWNER}/${REPO}/commits?path=${encodeURIComponent(SIGNERS_DIR)}` +
-        `&since=${since}&per_page=100&sha=${BRANCH}`,
-      token,
-    );
-    if (commitsRes.ok) {
-      const recent = (await commitsRes.json()) as unknown[];
-      if (recent.length >= MAX_NEW_PER_HOUR) {
-        return json({
-          status: 'throttled',
-          message: 'A lot of people are signing right now — try again in a bit.',
-        });
-      }
-    }
-
     // 4. Write.
     const signature = {
       handle: canonical,
@@ -187,13 +246,23 @@ export default async function handler(request: Request): Promise<Response> {
       at: new Date().toISOString(),
     };
     const content = toBase64(`${JSON.stringify(signature, null, 2)}\n`);
-    const total = jsonFiles.length + 1;
-    const mode = process.env.SIGN_MODE === 'pr' ? 'pr' : 'commit';
 
     if (mode === 'pr') {
-      const prMessage = await openPullRequest(token, canonical, filePath, content);
-      return json({ status: 'ok', handle: canonical, total, message: prMessage });
+      const outcome = await openPullRequest(token, canonical, filePath, content);
+      return json({
+        status: outcome === 'queued' ? 'ok' : 'already_signed',
+        handle: canonical,
+        // Unchanged on purpose: the signature is not on the wall until the PR is merged,
+        // so bumping the count here would show a number the next page load contradicts.
+        total: jsonFiles.length,
+        message:
+          outcome === 'queued'
+            ? 'Ur signature is queued for review.'
+            : 'Ur signature is already queued for review.',
+      });
     }
+
+    const total = jsonFiles.length + 1;
 
     const putRes = await gh(`/repos/${OWNER}/${REPO}/contents/${filePath}`, token, {
       method: 'PUT',
@@ -216,7 +285,12 @@ export default async function handler(request: Request): Promise<Response> {
       throw new Error(`commit failed: ${putRes.status}`);
     }
 
-    return json({ status: 'ok', handle: canonical, total });
+    return json({
+      status: 'ok',
+      handle: canonical,
+      total,
+      message: 'Ur name joins the wall in about a minute, once the site rebuilds.',
+    });
   } catch (error) {
     console.error('[sign]', error);
     return json(
@@ -226,13 +300,17 @@ export default async function handler(request: Request): Promise<Response> {
   }
 }
 
-/** SIGN_MODE=pr: branch + commit + PR, so each signature needs an explicit merge. */
+/**
+ * SIGN_MODE=pr: branch + commit + PR, so each signature needs an explicit merge.
+ * Returns which outcome occurred - a re-sign while a PR is still open must NOT be
+ * reported to the visitor as a fresh signature.
+ */
 async function openPullRequest(
   token: string,
   handle: string,
   filePath: string,
   content: string,
-): Promise<string> {
+): Promise<'queued' | 'already-queued'> {
   const branch = `sign/${handle.toLowerCase()}`;
 
   const baseRes = await gh(`/repos/${OWNER}/${REPO}/git/ref/heads/${BRANCH}`, token);
@@ -265,7 +343,8 @@ async function openPullRequest(
       body: `@${handle} signed the Am0wA Manifesto via the website.`,
     }),
   });
-  if (prRes.ok) return 'Ur signature is queued for review.';
-  if (prRes.status === 422) return 'Ur signature is already queued for review.';
+  if (prRes.ok) return 'queued';
+  // 422 = a PR for this head/base is already open.
+  if (prRes.status === 422) return 'already-queued';
   throw new Error(`pr failed: ${prRes.status}`);
 }

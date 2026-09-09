@@ -63,13 +63,79 @@ is a commit, and the wall only changes on rebuild (Vercel auto-builds on push to
 
 - `api/sign.ts` is a **Vercel function** at the repo root (not an Astro route — no adapter is
   installed, and `@astrojs/vercel` would change the whole build output). It validates the handle,
-  confirms the GitHub account exists, checks the file does not already exist, then commits.
+  confirms the GitHub account exists, checks the file does not already exist, then writes it.
   `api/ping.ts` exists only to prove root-level `api/` is picked up; delete it once confirmed.
-- `GITHUB_TOKEN` is a fine-grained PAT (this repo only, `Contents: write`), set in Vercel's env
-  for Production **and** Preview. **Never give it a `PUBLIC_` prefix** — that would inline the
-  token into the client bundle. `SIGN_MODE=pr` opens a PR per signature instead of committing.
-- **Moderation is `git revert`.** Impersonation is possible by design (anyone can type any
-  handle); the account must exist and can sign only once, and every signature is a visible commit.
+- **Both functions must use a NAMED METHOD EXPORT** (`export async function POST`), never
+  `export default`. Vercel's Node runtime only takes the Web-handler path for a module exporting
+  `fetch` or a named HTTP method; a bare default export is treated as a legacy `(req, res)`
+  handler, so it receives an `IncomingMessage`, the returned `Response` is discarded, and the
+  request hangs to a **504 instead of failing loudly**. The named form also gives 405s for free.
+- **`SIGN_MODE` defaults to `pr`**: each signature arrives as a pull request on a `sign/<handle>`
+  branch, so nothing reaches `main` — and no production rebuild happens — without an explicit
+  merge. Set `SIGN_MODE=commit` to write straight to `main` (instant, unmoderated).
+- `GITHUB_TOKEN` is a fine-grained PAT (this repo only) set in Vercel's env. It needs
+  **Contents: Read and write** and — because PR mode is the default — **Pull requests: Read and
+  write**. (Metadata: Read-only is automatic; `GET /users/{handle}` needs no permission.)
+  **Never give it a `PUBLIC_` prefix** — that would inline the token into the client bundle.
+- **`vercel.json` is load-bearing, not boilerplate.** `git.deploymentEnabled: {"sign/*": false}`
+  stops signature branches from creating preview deployments. Without it PR mode costs **two**
+  deployments per signature (preview on push, production on merge) versus one for commit mode —
+  worse, not better, against Hobby's 100 deployments/day. An **Ignored Build Step is not a
+  substitute**: a cancelled build still counts toward the quota. Config is read from `main`.
+- **Both result panels are server-driven.** The success and "already" panels render the `message`
+  the function returns, because only the server knows whether it committed (live after the next
+  build) or queued a PR (live after a merge). Do not hardcode either promise in the markup.
+  In PR mode the function also returns the count **unchanged** — the signature is not on the wall
+  until merge, so bumping it would show a number the next page load contradicts.
+- **Moderation is the merge** in PR mode (`git revert` in commit mode). Impersonation is possible
+  by design — anyone can type any handle, and the commit is authored by the PAT's identity, not
+  the signer's — so review the PR rather than trusting the handle.
+- GitHub's **"Automatically delete head branches"** is enabled, or `sign/*` branches would
+  accumulate. Hobby also allows only **1 concurrent build**, so simultaneous merges queue.
+- **The cap is mode-dependent, and that matters.** `overCapacity()` counts commits on the base
+  branch in `commit` mode but **open `sign/*` PRs** in PR mode. Counting commits in PR mode
+  measured *nothing* — signatures never touch the base branch until merged — which left the
+  endpoint effectively unlimited. It matches on the branch prefix our code sets, not the PR title
+  (renameable). `MAX_PENDING_PRS` must stay **under 100**, or the single `per_page=100` page stops
+  being sufficient and real pagination is needed. Both checks **fail open**: a GitHub outage must
+  not block signing, and a missed cap only costs noise.
+- **Capacity is checked before `GET /users`, deliberately.** Each request spends calls from a
+  shared **5,000/hr** token budget, so ~1,250 req/hr exhausts it and breaks signing for everyone —
+  a real DoS vector. Checking capacity first makes a flood cost one call per request instead of
+  four. Shape validation runs before any network call, so bad handles cost zero. **Do not reorder
+  these for readability.**
+- **The `Origin` check is not a control.** A script can omit or forge the header, and an absent
+  header is allowed on purpose (curl, privacy tooling). It only turns away casual cross-site
+  embedding. Do not build on it.
+- **Kill switch: revoke the PAT on GitHub.** Immediate, server-side, no redeploy — every call
+  fails, the function returns its generic 502, and the site is unaffected because the wall is
+  static. Deleting `GITHUB_TOKEN` in Vercel is *not* equivalent: env vars bind at deploy time, so
+  it needs a redeploy to take effect.
+- **CAPTCHA is deliberately absent.** Turnstile is the escalation if abuse appears: invisible mode,
+  verify with one `POST` to `challenges.cloudflare.com/turnstile/v0/siteverify`, secret in
+  `TURNSTILE_SECRET_KEY` (no `PUBLIC_` prefix), placed **before** any GitHub call so rejected bots
+  cost no quota. It **must fail closed** — accept a missing token and a bot simply omits it — which
+  is the real cost: it makes Cloudflare a runtime dependency of signing. Keep the queue cap too;
+  Turnstile bounds requests, the cap bounds the backlog.
+- **`Signer.cryptoSig` is a reservation, not a feature.** Optional string for a future detached
+  SSH signature over the fixed statement `I sign the Am0wA Manifesto`, checkable via
+  `ssh-keygen -Y verify` against `https://github.com/<handle>.keys` (public, unauthenticated).
+  Nothing validates it today, so **render no "verified" badge** from its presence — absence means
+  unsigned, presence means *unverified*. `/api/sign` can never populate it (no access to the
+  signer's private key), so only the GitHub path or a CLI can. Deliberately **no** version field:
+  the signature attests who signed, not which revision of the principles. Any verifier must stay
+  **out** of `npm run build` — build-time network calls would let a GitHub outage break deploys.
+- **`Signer.id` and `.at` are optional** so the one-click GitHub path works: a human cannot know
+  their numeric id. `avatarUrl()` falls back to `github.com/<handle>.png`, and the wall's sort
+  tolerates a missing `at` — without that, one hand-written file would **fail the whole site
+  build**, not just render oddly.
+- **Branch protection:** *Require a pull request before merging* on `main` (admin bypass left on)
+  is worth having — it makes the PAT structurally unable to write to `main` even if `SIGN_MODE`
+  is flipped to `commit`. But do **not** add any of these, each of which deadlocks signing:
+  *require status checks* (no Vercel check ever reports on `sign/*`, since `vercel.json` disables
+  those deployments, so the PR can never be merged), *require approvals* (signature PRs are
+  opened by your own PAT and GitHub forbids self-approval), or protection on `sign/*` itself
+  (rules can prevent the automatic head-branch deletion).
 - The component owns its anchor via `id={anchor}` on the root element, and there is deliberately
   **no markdown heading** above it: the signing form is the manifesto's closing call to action, not
   a topic, so a `##` there would put an action item in the "On this page" ToC. The wall's own `<h3>`

@@ -10,12 +10,32 @@
 export interface Signer {
   /** GitHub login, canonical casing as returned by the API. */
   handle: string;
-  /** GitHub's numeric user id. Survives renames, so avatar URLs keyed on it never rot. */
-  id: number;
+  /**
+   * GitHub's numeric user id. Survives renames, so avatar URLs keyed on it never rot.
+   * OPTIONAL because a hand-written signature (the one-click GitHub path) cannot know
+   * it - `avatarUrl()` falls back to the handle.
+   */
+  id?: number;
   /** GitHub display name. USER-CONTROLLED - always render via `safeLabel()`. */
   name?: string;
-  /** ISO 8601 timestamp of the signature. */
-  at: string;
+  /**
+   * ISO 8601 timestamp. OPTIONAL for the same reason: a hand-written file may omit it,
+   * and a missing value must degrade the sort order rather than fail the build.
+   */
+  at?: string;
+  /**
+   * Reserved for a future crypto-signing step: a detached SSH signature over the fixed
+   * statement `I sign the Am0wA Manifesto`, checkable with `ssh-keygen -Y verify`
+   * against the signer's public keys at `https://github.com/<handle>.keys` (public, no
+   * auth). The statement is fixed and the key is discoverable from the handle, so a bare
+   * armored signature string is enough - no algorithm or key id needed alongside it.
+   *
+   * UNVALIDATED today, so render **no** "verified" badge from its presence: absence
+   * means unsigned, presence means *unverified*. Note the web form can never set this -
+   * the function holds no private key of the signer's - so only the one-click GitHub
+   * path or a future CLI can supply one.
+   */
+  cryptoSig?: string;
 }
 
 /** What `POST /api/sign` can answer. Every branch is a 2xx except `error`. */
@@ -102,9 +122,15 @@ export function safeLabel(name: string | undefined, handle: string): string {
   return clean;
 }
 
-/** Avatar straight from GitHub's CDN, keyed on the immutable numeric id. */
-export function avatarUrl(id: number, size = 64): string {
-  return `https://avatars.githubusercontent.com/u/${id}?v=4&s=${size}`;
+/**
+ * Avatar straight from GitHub's CDN, keyed on the immutable numeric id when we have it.
+ * Without an id, fall back to the handle: rename-fragile, but it shows the real avatar
+ * rather than nothing, and a rebuild picks up any correction.
+ */
+export function avatarUrl(id: number | undefined, handle: string, size = 64): string {
+  return id
+    ? `https://avatars.githubusercontent.com/u/${id}?v=4&s=${size}`
+    : `https://github.com/${encodeURIComponent(handle)}.png?size=${size}`;
 }
 
 export function profileUrl(handle: string): string {

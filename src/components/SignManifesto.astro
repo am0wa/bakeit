@@ -32,7 +32,11 @@ const modules = import.meta.glob<Signer>('../data/signers/*.json', {
   import: 'default',
 });
 
-const signers = Object.values(modules).sort((a, b) => b.at.localeCompare(a.at));
+// Tolerant of a missing `at`: hand-written signature files are exactly where that
+// happens, and throwing here would fail the whole site build, not just this section.
+const signers = Object.values(modules).sort((a, b) =>
+  (b.at ?? '').localeCompare(a.at ?? ''),
+);
 const total = signers.length;
 const shown = signers.slice(0, MAX_RENDERED);
 const overflow = total - shown.length;
@@ -40,6 +44,20 @@ const overflow = total - shown.length;
 const cozy = total > 0 && total <= COZY_MAX;
 
 const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
+
+/**
+ * One-click manual path: GitHub's editor prefills from `filename` + `value`. The FULL
+ * path must live in `filename` - GitHub ignores the URL's trailing folder once it is
+ * present. Only fields a human can fill are included; `id` is optional and `avatarUrl()`
+ * falls back to the handle without it.
+ */
+const signTemplate = `{\n  "handle": "YOUR-HANDLE",\n  "at": "${new Date()
+  .toISOString()
+  .replace(/\.\d{3}Z$/, 'Z')}"\n}\n`;
+const signOnGitHubUrl =
+  'https://github.com/am0wa/bakeit/new/main' +
+  `?filename=${encodeURIComponent('src/data/signers/YOUR-HANDLE.json')}` +
+  `&value=${encodeURIComponent(signTemplate)}`;
 ---
 
 {/*
@@ -121,7 +139,8 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       <noscript>
         <p class="ms-note">
           Signing needs JavaScript &mdash; the manifesto itself does not. U can
-          always <a href={repoDir}>add Ur file on GitHub</a> instead.
+          <a href={signOnGitHubUrl}>sign on GitHub</a> instead: the file is prefilled,
+          just swap in Ur handle and name the branch <code>sign/Ur-handle</code>.
         </p>
       </noscript>
     </form>
@@ -131,15 +150,17 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
         <Emoji icon="party-popper" size="1.4em" />
         <span>U're in, <strong data-success-name></strong>!</span>
       </p>
-      <p class="ms-success-meta">
-        Ur name joins the wall in about a minute, once the site rebuilds.
-      </p>
+      {/* Filled from the server's `message`: only it knows whether the signature was
+          committed (live after the next build) or queued as a PR for review. */}
+      <p class="ms-success-meta" data-success-meta></p>
       <button class="ms-ghost" type="button" data-copy>Copy link to share</button>
     </div>
 
     <p class="ms-already" data-already tabindex="-1">
       <Emoji icon="check-mark-button" size="1.2em" />
-      <span><strong data-already-name></strong> already signed &mdash; thank U!</span>
+      {/* Server-driven: this panel is also how a still-open review PR is reported, so
+          "already signed" must not be hardcoded here. */}
+      <span data-already-msg></span>
     </p>
 
     {/* Never style this element: `.sr-only` lives in @layer starlight.utils and any
@@ -188,7 +209,7 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
                     <span class="ms-ava-fallback" aria-hidden="true">{initials(label)}</span>
                     <img
                       class="ms-ava-img"
-                      src={avatarUrl(signer.id)}
+                      src={avatarUrl(signer.id, signer.handle)}
                       alt=""
                       width="32"
                       height="32"
@@ -724,8 +745,9 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       status: HTMLElement;
       success: HTMLElement;
       successName: HTMLElement;
+      successMeta: HTMLElement;
       already: HTMLElement;
-      alreadyName: HTMLElement;
+      alreadyMsg: HTMLElement;
       copy: HTMLButtonElement;
       countNum: HTMLElement;
       countLabel: HTMLElement;
@@ -747,8 +769,9 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
         status: must(this, '[data-status]'),
         success: must(this, '[data-success]'),
         successName: must(this, '[data-success-name]'),
+        successMeta: must(this, '[data-success-meta]'),
         already: must(this, '[data-already]'),
-        alreadyName: must(this, '[data-already-name]'),
+        alreadyMsg: must(this, '[data-already-msg]'),
         copy: must(this, '[data-copy]'),
         countNum: must(this, '.ms-count-num'),
         countLabel: must(this, '.ms-count-label'),
@@ -789,11 +812,11 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
         switch (body?.status) {
           case 'ok':
             this.#count(body.total);
-            this.#set('success', body.handle ?? handle);
+            this.#set('success', body.handle ?? handle, body.message);
             return;
           case 'already_signed':
             this.#count(body.total);
-            this.#set('already', body.handle ?? handle);
+            this.#set('already', body.handle ?? handle, body.message);
             return;
           case 'unknown_handle':
           case 'invalid_handle':
@@ -835,19 +858,25 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
           this.#say('Signing…');
           break;
 
-        case 'success':
+        case 'success': {
+          const note = message ?? 'Ur signature is queued for review.';
           this.#refs.successName.textContent = `@${name ?? ''}`;
-          this.#say(`Signed. Welcome, ${name}. Ur name joins the wall after the next build.`);
+          this.#refs.successMeta.textContent = note;
+          // Announce the same words the panel shows, so the two cannot drift apart.
+          this.#say(`Signed as @${name}. ${note}`);
           // rAF: the panel's `display` only just changed, and focus() before style
           // recalc can be dropped by the browser.
           requestAnimationFrame(() => this.#refs.success.focus());
           break;
+        }
 
-        case 'already':
-          this.#refs.alreadyName.textContent = `@${name ?? ''}`;
-          this.#say(`@${name} already signed.`);
+        case 'already': {
+          const note = message ?? `@${name} already signed — thank U!`;
+          this.#refs.alreadyMsg.textContent = note;
+          this.#say(note);
           requestAnimationFrame(() => this.#refs.already.focus());
           break;
+        }
 
         case 'error':
           this.#refs.error.textContent = message ?? '';

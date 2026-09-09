@@ -38,47 +38,10 @@ export interface Signer {
   cryptoSig?: string;
 }
 
-/** What `POST /api/sign` can answer. Every branch is a 2xx except `error`. */
-export type SignStatus =
-  | 'ok'
-  | 'already_signed'
-  | 'unknown_handle'
-  | 'invalid_handle'
-  | 'throttled'
-  | 'error';
-
-export interface SignResponse {
-  status: SignStatus;
-  handle?: string;
-  total?: number;
-  message?: string;
-}
-
 /** Below this many signatures the wall renders larger - see `[data-cozy]`. */
 export const COZY_MAX = 24;
 /** Hard cap on rendered chips; the rest become "...and N more signers". */
 export const MAX_RENDERED = 600;
-
-/**
- * GitHub's own username grammar: 1-39 of [A-Za-z0-9-], no leading or trailing dash
- * and no doubled dash. Enforced on the client for fast feedback and again in the
- * function, where it also stops path traversal in the signature filename.
- */
-export const HANDLE_RE = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
-
-/** Strip a leading `@`, drop a pasted profile URL prefix, and trim. Casing preserved. */
-export function normalizeHandle(raw: string): string {
-  return raw
-    .trim()
-    .replace(/^https?:\/\/(?:www\.)?github\.com\//i, '')
-    .replace(/^@+/, '')
-    .replace(/\/+$/, '')
-    .trim();
-}
-
-export function isValidHandle(handle: string): boolean {
-  return HANDLE_RE.test(handle);
-}
 
 const LABEL_URLISH = /(https?:|\/\/|www\.|t\.me|@)/i;
 const LABEL_TLD =

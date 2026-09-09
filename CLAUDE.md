@@ -117,6 +117,27 @@ is a commit, and the wall only changes on rebuild (Vercel auto-builds on push to
   cost no quota. It **must fail closed** — accept a missing token and a bot simply omits it — which
   is the real cost: it makes Cloudflare a runtime dependency of signing. Keep the queue cap too;
   Turnstile bounds requests, the cap bounds the backlog.
+- **Signing is GitHub OAuth, and the handle comes ONLY from `GET /user`.** Never from a query
+  parameter or a body. The original `POST /api/sign` took a typed handle, so anyone could sign as
+  anyone — proven by signing as `@octocat`. That export was **deleted**, not guarded: the
+  impersonable path no longer exists. Do not reintroduce a caller-supplied handle.
+- **Two credentials, two jobs.** The OAuth *user* token establishes **identity** (never stored,
+  logged, or returned); `GITHUB_TOKEN` supplies **authority**, because a visitor's own token has no
+  write access to this repo. Env: `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`.
+- **The `state` parameter is mandatory, not garnish.** Without it an attacker can craft a link that
+  signs the manifesto as whoever clicks it — the exact harm OAuth removes. It is stateless:
+  `<nonce>.<issuedAt>.<hmac>` keyed on the client secret, verified with `timingSafeEqual` plus a
+  10-minute freshness window. No cookie, no store. A malformed/wrongly-signed state answers **400**
+  (cannot be a real visitor); a correctly-signed but stale one redirects with `?sign=expired`, since
+  that *is* a real visitor who left the authorize screen open.
+- **No OAuth scope is requested** — `GET /user` returns the public profile without one, and
+  deliberately no email scope. If GitHub ever requires one, use `read:user` and nothing more.
+- **OAuth Apps allow exactly one callback URL**, matched exactly: `https://www.bakeit.dev/api/sign`.
+  Local development of this flow therefore needs its own OAuth App. `redirect_uri` must be sent in
+  both the authorize and token-exchange steps.
+- **The client has no fetch.** The sign-in control is a plain `<a href="/api/sign">`, so the flow
+  works with JS disabled; the function redirects back with `?sign=queued|signed|already|busy|expired|error`
+  and the script only turns that into a panel and strips the param so a refresh cannot replay it.
 - **`Signer.cryptoSig` is a reservation, not a feature.** Optional string for a future detached
   SSH signature over the fixed statement `I sign the Am0wA Manifesto`, checkable via
   `ssh-keygen -Y verify` against `https://github.com/<handle>.keys` (public, unauthenticated).

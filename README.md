@@ -67,7 +67,8 @@ keeps it to one signature per person.
 
 Two ways to sign, both ending in a pull request:
 
-1. **On the site** — type Ur GitHub handle in the form on the manifesto page. It opens the PR for U.
+1. **On the site** — click **Sign in with GitHub** on the manifesto page. GitHub confirms who U
+   are, then the PR is opened for U. Nothing to type, and no one can sign on Ur behalf.
 2. **Here on GitHub** — [add Ur signature file](https://github.com/am0wa/bakeit/new/main?filename=src%2Fdata%2Fsigners%2FYOUR-HANDLE.json&value=%7B%0A%20%20%22handle%22%3A%20%22YOUR-HANDLE%22%2C%0A%20%20%22at%22%3A%20%222026-09-09T00%3A00%3A00Z%22%0A%7D%0A). The path and contents come
    prefilled; swap in Ur handle and **name the branch `sign/<Ur-handle>`** when committing.
 

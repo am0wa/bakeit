@@ -44,20 +44,6 @@ const overflow = total - shown.length;
 const cozy = total > 0 && total <= COZY_MAX;
 
 const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
-
-/**
- * One-click manual path: GitHub's editor prefills from `filename` + `value`. The FULL
- * path must live in `filename` - GitHub ignores the URL's trailing folder once it is
- * present. Only fields a human can fill are included; `id` is optional and `avatarUrl()`
- * falls back to the handle without it.
- */
-const signTemplate = `{\n  "handle": "YOUR-HANDLE",\n  "at": "${new Date()
-  .toISOString()
-  .replace(/\.\d{3}Z$/, 'Z')}"\n}\n`;
-const signOnGitHubUrl =
-  'https://github.com/am0wa/bakeit/new/main' +
-  `?filename=${encodeURIComponent('src/data/signers/YOUR-HANDLE.json')}` +
-  `&value=${encodeURIComponent(signTemplate)}`;
 ---
 
 {/*
@@ -69,83 +55,34 @@ const signOnGitHubUrl =
 <manifesto-signing
   id={anchor}
   class="not-content"
-  data-state="nojs"
+  data-state="idle"
   data-empty={total === 0 ? '' : undefined}
-  data-endpoint="/api/sign"
   data-anchor={anchor}
   data-cozy={cozy ? '' : undefined}
 >
   <div class="ms-card">
-    <form class="ms-form" data-form novalidate>
-      <p class="ms-field">
-        <label for="ms-handle">Ur GitHub name</label>
-        <span class="ms-row">
-          <span class="ms-input-wrap">
-            <span class="ms-at" aria-hidden="true">@</span>
-            <input
-              id="ms-handle"
-              name="handle"
-              type="text"
-              required
-              maxlength="39"
-              placeholder="octocat"
-              autocomplete="off"
-              autocapitalize="off"
-              autocorrect="off"
-              spellcheck="false"
-              enterkeyhint="send"
-              aria-describedby="ms-handle-err"
-            />
-          </span>
-          {/*
-            `disabled` in the HTML is the no-JS guard: it also blocks implicit submission
-            on Enter, so a no-JS visitor can never be navigated to `?handle=...`.
-            The script removes it on upgrade and uses aria-disabled for busy instead,
-            which keeps the button focusable.
-          */}
-          <button class="ms-btn" type="submit" data-submit disabled>
-            {/*
-              Each state carries its OWN icon, and both states share one grid cell, so
-              the button's width never changes (it sits beside the input, and a resize
-              on submit would lurch the field) while text and icon stay a single
-              centred unit. Keeping the icon in a separate slot left it stranded at the
-              far edge, because the wider label stretched the text away from it.
-            */}
-            <span class="ms-btn-swap">
-              <span class="ms-btn-idle">
-                Sign
-                {/* `monochrome` picks the icon set: true gives emojione-monotone, which
-                    inherits `currentColor` and so renders white on the violet button;
-                    false gives the colour twemoji used in the section heading. */}
-                <Emoji icon="fountain-pen" monochrome={true} size="1.2em" />
-              </span>
-              <span class="ms-btn-busy">
-                Signing&hellip;
-                <span class="ms-spinner" aria-hidden="true"></span>
-              </span>
-            </span>
-          </button>
-        </span>
-        <span class="ms-field-err" id="ms-handle-err" data-err></span>
-        <span class="ms-fine">No account, no sign-up &mdash; nothing else is collected</span>
-      </p>
+    {/*
+      No handle input, deliberately. The signer's identity comes from GitHub via OAuth,
+      so there is nothing for a visitor to type - and nothing to impersonate with. This
+      is a plain link, so it works with JS disabled too.
+    */}
+    <p class="ms-form">
+      <a class="ms-btn" href="/api/sign" data-signin>
+        Sign in with GitHub
+        <Emoji icon="fountain-pen" monochrome={true} size="1.2em" />
+      </a>
+      <span class="ms-fine">
+        GitHub tells us who U are &mdash; nothing else is collected, and no one can sign for U.
+      </span>
+    </p>
 
-      {/* Permanently in the DOM and empty, so role=alert announces on text insertion. */}
-      <p class="ms-error" role="alert">
-        <Emoji icon="warning" size="1.1em" />
-        <span data-error></span>
-      </p>
+    {/* Permanently in the DOM and empty, so role=alert announces on text insertion. */}
+    <p class="ms-error" role="alert">
+      <Emoji icon="warning" size="1.1em" />
+      <span data-error></span>
+    </p>
 
-      <noscript>
-        <p class="ms-note">
-          Signing needs JavaScript &mdash; the manifesto itself does not. U can
-          <a href={signOnGitHubUrl}>sign on GitHub</a> instead: the file is prefilled,
-          just swap in Ur handle and name the branch <code>sign/Ur-handle</code>.
-        </p>
-      </noscript>
-    </form>
-
-    <div class="ms-success" data-success tabindex="-1">
+    <div class="ms-success" data-success>
       <p class="ms-success-title">
         <Emoji icon="party-popper" size="1.4em" />
         <span>U're in, <strong data-success-name></strong>!</span>
@@ -156,7 +93,7 @@ const signOnGitHubUrl =
       <button class="ms-ghost" type="button" data-copy>Copy link to share</button>
     </div>
 
-    <p class="ms-already" data-already tabindex="-1">
+    <p class="ms-already" data-already>
       <Emoji icon="check-mark-button" size="1.2em" />
       {/* Server-driven: this panel is also how a still-open review PR is reported, so
           "already signed" must not be hardcoded here. */}
@@ -306,109 +243,6 @@ const signOnGitHubUrl =
     display: grid;
     gap: 0.9rem;
   }
-  .ms-field {
-    display: grid;
-    gap: 0.3rem;
-    margin: 0;
-  }
-
-  /* Input and Sign share a row. `stretch` makes the button match the input's height
-     exactly, and `wrap` drops it onto its own line in a narrow card. */
-  .ms-row {
-    display: flex;
-    align-items: stretch;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .ms-field > label {
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-    color: var(--sl-color-white);
-  }
-
-  .ms-input-wrap {
-    display: flex;
-    align-items: stretch;
-    /* Grow to fill the row, but never below a usable width before wrapping. */
-    flex: 1 1 12rem;
-    /* Not for the children (they carry their own start/end radii) but so the focus
-       ring below follows the field's rounded outline instead of boxing it. */
-    border-radius: var(--ms-radius);
-  }
-  .ms-at {
-    display: flex;
-    align-items: center;
-    padding-inline: 0.7rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-inline-end: 0;
-    border-start-start-radius: var(--ms-radius);
-    border-end-start-radius: var(--ms-radius);
-    background-color: var(--sl-color-gray-6);
-    color: var(--sl-color-gray-3);
-    font-weight: 600;
-  }
-  /*
-    LOAD-BEARING, not decoration: @astrojs/starlight-tailwind puts
-    `*{border:0 solid}` in @layer base and Preflight is deliberately not imported, so
-    without `appearance`/`border`/`background-color` an input is a borderless white box
-    in dark mode.
-  */
-  .ms-input-wrap input {
-    appearance: none;
-    inline-size: 100%;
-    min-inline-size: 0;
-    padding: 0.55rem 0.75rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-start-end-radius: var(--ms-radius);
-    border-end-end-radius: var(--ms-radius);
-    background-color: var(--ms-inset);
-    color: var(--sl-color-white);
-    /* >= 16px stops iOS zooming the page on focus. */
-    font-size: var(--sl-text-base);
-    font-family: inherit;
-    transition:
-      border-color 120ms ease,
-      background-color 120ms ease;
-  }
-  .ms-input-wrap input::placeholder {
-    color: var(--sl-color-gray-4);
-  }
-  .ms-input-wrap input:hover {
-    border-color: var(--sl-color-gray-4);
-  }
-  .ms-input-wrap input[aria-invalid='true'] {
-    border-color: var(--sl-color-red);
-    background-color: var(--sl-color-red-low);
-  }
-
-  .ms-field-err:empty {
-    display: none;
-  }
-  .ms-field-err {
-    font-size: var(--sl-text-2xs);
-    font-weight: 600;
-    color: var(--sl-color-red-high);
-  }
-
-  /*
-    Focus ring: the `@` prefix and the input are one control visually, but the global
-    `:focus-visible` rule in src/starlight.css lands on the <input> alone - so it drew
-    a ring between the two and bled over the `@` box. Move it to the wrapper and match
-    that rule's 2px/2px so the whole field lights up in the site's accent.
-
-    `outline: none` on the input is safe ONLY because the wrapper draws the ring in its
-    place. Removing the wrapper rule would leave the field with no focus indicator.
-    `:focus-within` rather than `:has(:focus-visible)`: the only focusable child is a
-    text input, for which :focus-visible matches on click too, so the two are equivalent
-    here and this needs no `:has()` support.
-  */
-  .ms-input-wrap:focus-within {
-    outline: 2px solid var(--sl-color-text-accent);
-    outline-offset: 2px;
-  }
-  .ms-input-wrap input:focus-visible {
-    outline: none;
-  }
 
   /* ---------- button ---------- */
   .ms-btn {
@@ -446,61 +280,7 @@ const signOnGitHubUrl =
     cursor: progress;
   }
 
-  /* Both states stack in one grid cell: the widest sets the button's width, so
-     nothing reflows on submit. `justify-items: center` is load-bearing - the default
-     `stretch` would left-align the shorter label inside the reserved width and pull
-     its icon away from the text. `visibility` keeps the box that `display: none`
-     would collapse, and still hides the text from the a11y tree. */
-  .ms-btn-swap {
-    display: grid;
-    justify-items: center;
-  }
-  .ms-btn-swap > * {
-    grid-area: 1 / 1;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    white-space: nowrap;
-  }
-
-  .ms-btn-busy {
-    visibility: hidden;
-  }
-  [data-state='submitting'] .ms-btn-idle {
-    visibility: hidden;
-  }
-  [data-state='submitting'] .ms-btn-busy {
-    visibility: visible;
-  }
-
-  .ms-spinner {
-    inline-size: 1em;
-    block-size: 1em;
-    border: 2px solid currentColor;
-    border-block-start-color: transparent;
-    border-radius: 50%;
-    flex: none;
-  }
-  [data-state='submitting'] .ms-spinner {
-    animation: ms-spin 700ms linear infinite;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    /* A static ring says nothing; the "Signing..." label carries the state. */
-    .ms-spinner {
-      visibility: hidden;
-    }
-    [data-state='submitting'] .ms-spinner {
-      animation: none;
-    }
-  }
-  @keyframes ms-spin {
-    to {
-      transform: rotate(1turn);
-    }
-  }
-
-  .ms-fine,
-  .ms-note {
+  .ms-fine {
     margin: 0;
     font-size: var(--sl-text-2xs);
     color: var(--sl-color-gray-3);
@@ -722,36 +502,34 @@ const signOnGitHubUrl =
 </style>
 
 <script>
-  import {
-    formatCount,
-    isValidHandle,
-    must,
-    normalizeHandle,
-    type SignResponse,
-  } from './signManifesto';
+  import { must } from './signManifesto';
 
-  type State = 'nojs' | 'idle' | 'invalid' | 'submitting' | 'success' | 'already' | 'error';
+  /**
+   * The OAuth callback sends the visitor back to this page with `?sign=<result>`, so all
+   * this script does is turn that into a visible panel and tidy the URL. There is no
+   * form to submit and no fetch: the sign-in control is a plain <a href="/api/sign">,
+   * which is why the whole flow still works with JavaScript disabled.
+   */
+  type Result = 'queued' | 'signed' | 'already' | 'busy' | 'expired' | 'error';
+
+  const OUTCOMES: Record<Result, { state: string; message: string }> = {
+    // PR mode: nothing is on the wall until the PR is merged. Say so.
+    queued: { state: 'success', message: 'Ur signature is queued for review.' },
+    // commit mode: it is on its way to the wall directly.
+    signed: { state: 'success', message: 'Ur name joins the wall in about a minute.' },
+    already: { state: 'already', message: 'U already signed — thank U!' },
+    busy: {
+      state: 'error',
+      message: 'There are a lot of signatures awaiting review — try again in a bit.',
+    },
+    expired: { state: 'error', message: 'That sign-in took too long. Give it another go.' },
+    error: { state: 'error', message: 'Signing is having a moment — try again in a bit.' },
+  };
+
+  const isResult = (v: string | null): v is Result => v !== null && v in OUTCOMES;
 
   class ManifestoSigning extends HTMLElement {
     #wired = false;
-    #busy = false;
-    #endpoint = '/api/sign';
-    #refs!: {
-      form: HTMLFormElement;
-      input: HTMLInputElement;
-      submit: HTMLButtonElement;
-      fieldErr: HTMLElement;
-      error: HTMLElement;
-      status: HTMLElement;
-      success: HTMLElement;
-      successName: HTMLElement;
-      successMeta: HTMLElement;
-      already: HTMLElement;
-      alreadyMsg: HTMLElement;
-      copy: HTMLButtonElement;
-      countNum: HTMLElement;
-      countLabel: HTMLElement;
-    };
 
     // connectedCallback, not the constructor: a custom element constructor must not
     // inspect its children, and this can fire more than once.
@@ -759,184 +537,61 @@ const signOnGitHubUrl =
       if (this.#wired) return;
       this.#wired = true;
 
-      this.#endpoint = this.dataset.endpoint ?? '/api/sign';
-      this.#refs = {
-        form: must(this, '[data-form]'),
-        input: must(this, '#ms-handle'),
-        submit: must(this, '[data-submit]'),
-        fieldErr: must(this, '[data-err]'),
-        error: must(this, '[data-error]'),
-        status: must(this, '[data-status]'),
-        success: must(this, '[data-success]'),
-        successName: must(this, '[data-success-name]'),
-        successMeta: must(this, '[data-success-meta]'),
-        already: must(this, '[data-already]'),
-        alreadyMsg: must(this, '[data-already-msg]'),
-        copy: must(this, '[data-copy]'),
-        countNum: must(this, '.ms-count-num'),
-        countLabel: must(this, '.ms-count-label'),
-      };
+      const params = new URLSearchParams(window.location.search);
+      const result = params.get('sign');
+      const handle = params.get('as');
 
-      // JS is alive: the no-JS guard comes off.
-      this.#refs.submit.disabled = false;
-      this.#refs.form.addEventListener('submit', this.#onSubmit);
-      this.#refs.input.addEventListener('input', this.#clearFieldError);
-      this.#refs.copy.addEventListener('click', () => void this.#onCopy());
-      this.#set('idle');
-    }
-
-    #onSubmit = (event: SubmitEvent): void => {
-      event.preventDefault();
-      if (this.#busy) return; // aria-disabled is advisory; this is the real guard
-
-      const handle = normalizeHandle(this.#refs.input.value);
-      if (!isValidHandle(handle)) {
-        this.#fieldError("That's not a GitHub username — letters, digits and dashes only.");
-        return;
+      // Strip the result from the URL either way, so a refresh or a copied link does not
+      // replay a stale outcome. Keep any hash so the anchor still works.
+      if (params.has('sign')) {
+        window.history.replaceState({}, '', window.location.pathname + window.location.hash);
       }
-      this.#refs.input.value = handle; // reflect the normalisation back to the user
-      void this.#submit(handle);
-    };
 
-    async #submit(handle: string): Promise<void> {
-      this.#set('submitting');
-      try {
-        const res = await fetch(this.#endpoint, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ handle }),
-          signal: AbortSignal.timeout(12_000),
-        });
-        const body = (await res.json().catch(() => null)) as SignResponse | null;
+      // No result: this is a normal page view. The sign-in link needs no wiring.
+      if (!isResult(result)) return;
 
-        switch (body?.status) {
-          case 'ok':
-            this.#count(body.total);
-            this.#set('success', body.handle ?? handle, body.message);
-            return;
-          case 'already_signed':
-            this.#count(body.total);
-            this.#set('already', body.handle ?? handle, body.message);
-            return;
-          case 'unknown_handle':
-          case 'invalid_handle':
-            // A message about the field belongs on the field, not in an error strip.
-            this.#fieldError(body.message ?? `No GitHub user called @${handle}.`);
-            return;
-          case 'throttled':
-            this.#set('error', undefined, body.message);
-            return;
-          default:
-            this.#set(
-              'error',
-              undefined,
-              body?.message ?? 'Signing is having a moment — try again in a bit.',
-            );
-        }
-      } catch (error) {
-        const timedOut =
-          error instanceof DOMException &&
-          (error.name === 'TimeoutError' || error.name === 'AbortError');
-        this.#set(
-          'error',
-          undefined,
-          timedOut
-            ? 'That took too long. Check Ur connection and retry.'
-            : "Couldn't reach the signature book. Are U online?",
-        );
-      }
-    }
-
-    #set(state: State, name?: string, message?: string): void {
+      const { state, message } = OUTCOMES[result];
       this.dataset.state = state;
-      this.#busy = state === 'submitting';
-      this.#refs.submit.setAttribute('aria-disabled', String(this.#busy));
-      this.#refs.form.setAttribute('aria-busy', String(this.#busy));
 
-      switch (state) {
-        case 'submitting':
-          this.#say('Signing…');
-          break;
+      // Deliberately NO focus management. The visitor arrives here by navigation from
+      // GitHub, so focus is already at the top of a fresh document and nothing was lost -
+      // moving it would only draw the global :focus-visible ring around a panel they
+      // never interacted with. The aria-live status below carries the outcome instead.
+      // (Focusing was right when this panel replaced a form in place; it is not now.)
 
-        case 'success': {
-          const note = message ?? 'Ur signature is queued for review.';
-          this.#refs.successName.textContent = `@${name ?? ''}`;
-          this.#refs.successMeta.textContent = note;
-          // Announce the same words the panel shows, so the two cannot drift apart.
-          this.#say(`Signed as @${name}. ${note}`);
-          // rAF: the panel's `display` only just changed, and focus() before style
-          // recalc can be dropped by the browser.
-          requestAnimationFrame(() => this.#refs.success.focus());
-          break;
-        }
-
-        case 'already': {
-          const note = message ?? `@${name} already signed — thank U!`;
-          this.#refs.alreadyMsg.textContent = note;
-          this.#say(note);
-          requestAnimationFrame(() => this.#refs.already.focus());
-          break;
-        }
-
-        case 'error':
-          this.#refs.error.textContent = message ?? '';
-          // Still focusable: busy is aria-disabled, not disabled, so "press again"
-          // needs no travel and focus is never destroyed mid-interaction.
-          this.#refs.submit.focus();
-          break;
-
-        case 'idle':
-          this.#say('');
-          break;
+      if (state === 'success') {
+        must<HTMLElement>(this, '[data-success-name]').textContent = handle ? `@${handle}` : '';
+        must<HTMLElement>(this, '[data-success-meta]').textContent = message;
+      } else if (state === 'already') {
+        must<HTMLElement>(this, '[data-already-msg]').textContent = handle
+          ? `@${handle} already signed — thank U!`
+          : message;
+      } else {
+        must<HTMLElement>(this, '[data-error]').textContent = message;
       }
+
+      // Announce it once, for anyone not watching the panel appear.
+      const status = must<HTMLElement>(this, '[data-status]');
+      status.textContent = '';
+      setTimeout(() => {
+        status.textContent = handle ? `${message} Signed as @${handle}.` : message;
+      }, 40);
+
+      const copy = this.querySelector<HTMLButtonElement>('[data-copy]');
+      copy?.addEventListener('click', () => void this.#onCopy(copy));
     }
 
-    #fieldError(message: string): void {
-      this.dataset.state = 'invalid';
-      this.#busy = false;
-      this.#refs.fieldErr.textContent = message;
-      this.#refs.input.setAttribute('aria-invalid', 'true');
-      // Moving focus reads the field's aria-describedby, which now includes the error.
-      // Do not also push it into the status region: that double-announces.
-      this.#refs.input.focus();
-    }
-
-    #clearFieldError = (): void => {
-      this.#refs.fieldErr.textContent = '';
-      this.#refs.input.removeAttribute('aria-invalid');
-      if (this.dataset.state === 'invalid') this.dataset.state = 'idle';
-    };
-
-    /** The wall is built at deploy time, but the headline number can move now. */
-    #count(total: number | undefined): void {
-      if (typeof total !== 'number') return;
-      this.#refs.countNum.textContent = formatCount(total);
-      this.#refs.countLabel.textContent = total === 1 ? 'person' : 'people';
-      if (total > 0) this.removeAttribute('data-empty'); // first signature: reveal it
-    }
-
-    async #onCopy(): Promise<void> {
-      const link = `${location.origin}${location.pathname}#${this.dataset.anchor ?? ''}`;
+    async #onCopy(button: HTMLButtonElement): Promise<void> {
+      const link = `${window.location.origin}${window.location.pathname}#${this.dataset.anchor ?? ''}`;
       try {
-        await navigator.clipboard.writeText(link);
-        this.#refs.copy.textContent = 'Copied ✓';
-        this.#say('Link copied.');
+        await window.navigator.clipboard.writeText(link);
+        button.textContent = 'Copied ✓';
       } catch {
-        this.#refs.copy.textContent = link; // no clipboard: show it to select by hand
+        button.textContent = link; // no clipboard: show it to select by hand
       }
       setTimeout(() => {
-        this.#refs.copy.textContent = 'Copy link to share';
+        button.textContent = 'Copy link to share';
       }, 2400);
-    }
-
-    /** role=status only re-announces on a CHANGE, so clear first and set on a later task. */
-    #say(message: string): void {
-      this.#refs.status.textContent = '';
-      if (message) {
-        setTimeout(() => {
-          this.#refs.status.textContent = message;
-        }, 40);
-      }
     }
   }
 

@@ -323,7 +323,10 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
   }
   [data-state='already'] .ms-already {
     display: flex;
-    align-items: baseline;
+    /* `center`, not `baseline`: an SVG's baseline is its bottom edge, so baseline-aligning
+       an icon against text sits its bottom on the text baseline and lifts it above the
+       line's optical centre. The success panel and empty state already use `center`. */
+    align-items: center;
     gap: 0.5rem;
     margin: 0;
   }
@@ -549,7 +552,7 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       // `must()` - the node only exists while the wall is empty, so absence is normal.
       if (result === 'queued') {
         const empty = this.querySelector<HTMLElement>('[data-empty-msg]');
-        if (empty) empty.textContent = 'Ur signature is first in line — it lands here once merged';
+        if (empty) empty.textContent = 'Ur signature is first in line — it lands here once approved';
       }
 
       // Deliberately NO focus management. The visitor arrives here by navigation from

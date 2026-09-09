@@ -1,0 +1,93 @@
+---
+/**
+ * Override for Starlight's `ThemeSelect`, which is a three-option `<select>` (dark / light / auto).
+ * This replaces it with a single toggle button: the page still *starts* in auto — Starlight's
+ * `ThemeProvider` inline script picks the theme from `localStorage` or `prefers-color-scheme`
+ * before first paint — and the button just flips between dark and light from there.
+ *
+ * The stored value keeps Starlight's `starlight-theme` key and its `'light' | 'dark' | ''` shape,
+ * so the provider, the docs search modal and anything else reading it keep working.
+ */
+import { Icon } from '@astrojs/starlight/components';
+
+/* Starlight's own `themeSelect.accessibleLabel` ("Select theme") describes a menu, not a toggle. */
+const label = 'Toggle between dark and light theme';
+---
+
+<starlight-theme-toggle>
+	<button type="button" aria-label={label} title={label}>
+		<Icon name="sun" class="icon sun" />
+		<Icon name="moon" class="icon moon" />
+	</button>
+</starlight-theme-toggle>
+
+<style>
+	@layer starlight.components {
+		button {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0.375rem;
+			border: 0;
+			border-radius: 0.25rem;
+			background-color: transparent;
+			color: var(--sl-color-gray-2);
+			cursor: pointer;
+			line-height: 0;
+		}
+
+		button:hover {
+			color: var(--sl-color-white);
+		}
+
+		.icon {
+			font-size: 1.25rem;
+		}
+
+		/* Show the icon for the theme that is currently active. Driven purely by the `data-theme`
+		   attribute the provider sets pre-paint, so the right icon is in place on first render. */
+		:global(:root[data-theme='dark']) .sun,
+		:global(:root[data-theme='light']) .moon {
+			display: none;
+		}
+	}
+</style>
+
+<script>
+	const storageKey = 'starlight-theme';
+
+	/** The theme actually on screen, as set by Starlight's `ThemeProvider`. */
+	const currentTheme = (): 'dark' | 'light' =>
+		document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+	/** Whether we are still in auto: no explicit choice stored, so the system preference wins. */
+	const isAuto = (): boolean => {
+		try {
+			return !localStorage.getItem(storageKey);
+		} catch {
+			return true;
+		}
+	};
+
+	// While in auto, keep following the system if it changes with the page open.
+	const systemLight = matchMedia('(prefers-color-scheme: light)');
+	systemLight.addEventListener('change', () => {
+		if (isAuto()) document.documentElement.dataset.theme = systemLight.matches ? 'light' : 'dark';
+	});
+
+	class StarlightThemeToggle extends HTMLElement {
+		constructor() {
+			super();
+			this.querySelector('button')?.addEventListener('click', () => {
+				const theme = currentTheme() === 'dark' ? 'light' : 'dark';
+				document.documentElement.dataset.theme = theme;
+				try {
+					localStorage.setItem(storageKey, theme);
+				} catch {
+					// Private mode / storage disabled: the toggle still works for this page view.
+				}
+			});
+		}
+	}
+	customElements.define('starlight-theme-toggle', StarlightThemeToggle);
+</script>

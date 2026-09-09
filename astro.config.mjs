@@ -52,6 +52,10 @@ export default defineConfig({
 					items: [{ autogenerate: { directory: 'learn-more' } }],
 				},
 			],
+			components: {
+				// Swap the dark/light/auto <select> for a plain dark/light toggle button.
+				ThemeSelect: './src/components/ThemeSelect.astro',
+			},
 			customCss: ['./src/tailwind.css', './src/starlight.css'],
 		}),
 	],

@@ -18,10 +18,29 @@
     outline-offset: 2px;
 }
 
-/* Chrome matches `:focus-visible` on a `<select>` even when it is opened by mouse, so the header
-   selects flashed a full-size accent ring on every click. They are already visually distinct and
-   the whole header row is reachable by Tab, so drop the ring on them entirely. */
-starlight-theme-select select:focus-visible,
-starlight-lang-select select:focus-visible {
-    outline: none;
+/**
+ * Theme toggle on small screens. Below 50rem Starlight hides the header's right group
+ * (`sl-hidden md:sl-flex`) and offers the theme control from the mobile menu drawer instead — but
+ * splash pages like the home page have no sidebar, so they get no drawer and no way to switch
+ * theme at all. Bring the group back for those pages only, with just the toggle inside it: pages
+ * that do have a sidebar keep using the drawer, so the control is never duplicated. The language
+ * select renders nothing on a monolingual site. This file is unlayered, so these rules outrank
+ * Starlight's `starlight.utils` layer without `!important`.
+ */
+@media (max-width: 49.999rem) {
+    :root:not([data-has-sidebar]) .header .right-group {
+        display: flex;
+    }
+
+    /* `.header` is `space-between`, so a third item would park the search in the middle while
+       sidebar pages — two items, and a reserved end padding for the menu button — keep it at the
+       end. Let the title take the slack instead, so search and toggle sit together on the right in
+       both layouts. */
+    :root:not([data-has-sidebar]) .header .title-wrapper {
+        margin-inline-end: auto;
+    }
+
+    :root:not([data-has-sidebar]) .header .right-group .social-icons {
+        display: none;
+    }
 }

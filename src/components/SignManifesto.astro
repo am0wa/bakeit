@@ -57,7 +57,6 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
   class="not-content"
   data-state="idle"
   data-empty={total === 0 ? '' : undefined}
-  data-anchor={anchor}
   data-cozy={cozy ? '' : undefined}
 >
   <div class="ms-card">
@@ -71,8 +70,11 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
         Sign in with GitHub
         <Emoji icon="fountain-pen" monochrome={true} size="1.2em" />
       </a>
+      {/* "Profile", not "name": the signature stores handle, numeric id, display name
+          and timestamp - all public, but more than a name, so "only public name" would
+          be an overclaim. */}
       <span class="ms-fine">
-        GitHub tells us who U are &mdash; nothing else is collected, and no one can sign for U.
+        Only Ur public profile, so we know U are U
       </span>
     </p>
 
@@ -90,7 +92,6 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       {/* Filled from the server's `message`: only it knows whether the signature was
           committed (live after the next build) or queued as a PR for review. */}
       <p class="ms-success-meta" data-success-meta></p>
-      <button class="ms-ghost" type="button" data-copy>Copy link to share</button>
     </div>
 
     <p class="ms-already" data-already>
@@ -127,7 +128,10 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       total === 0 ? (
         <p class="ms-empty">
           <Emoji icon="fountain-pen" size="1.5em" />
-          <span>No signatures yet &mdash; be the first. Best kind of first.</span>
+          {/* Rendered at build time, so it cannot know a signature is pending review.
+              The script rewrites it on a `queued` return - otherwise "be the first"
+              sits directly under "U're in" and contradicts it. */}
+          <span data-empty-msg>No signatures yet &mdash; be the first</span>
         </p>
       ) : (
         <ul class="ms-list" aria-labelledby="ms-wall-title">
@@ -350,20 +354,6 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
     }
   }
 
-  .ms-ghost {
-    padding: 0.35rem 0.75rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-radius: var(--ms-radius);
-    background: transparent;
-    color: var(--sl-color-text-accent);
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  .ms-ghost:hover {
-    background-color: var(--sl-color-accent-low);
-  }
 
   /* ---------- wall ---------- */
   .ms-wall {
@@ -514,16 +504,16 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
 
   const OUTCOMES: Record<Result, { state: string; message: string }> = {
     // PR mode: nothing is on the wall until the PR is merged. Say so.
-    queued: { state: 'success', message: 'Ur signature is queued for review.' },
+    queued: { state: 'success', message: 'Ur signature is queued for review' },
     // commit mode: it is on its way to the wall directly.
-    signed: { state: 'success', message: 'Ur name joins the wall in about a minute.' },
-    already: { state: 'already', message: 'U already signed — thank U!' },
+    signed: { state: 'success', message: 'Ur name joins the wall in about a minute' },
+    already: { state: 'already', message: 'U already signed — thank U' },
     busy: {
       state: 'error',
-      message: 'There are a lot of signatures awaiting review — try again in a bit.',
+      message: 'There are a lot of signatures awaiting review — try again in a bit',
     },
-    expired: { state: 'error', message: 'That sign-in took too long. Give it another go.' },
-    error: { state: 'error', message: 'Signing is having a moment — try again in a bit.' },
+    expired: { state: 'error', message: 'That sign-in took too long — give it another go' },
+    error: { state: 'error', message: 'Signing is having a moment — try again in a bit' },
   };
 
   const isResult = (v: string | null): v is Result => v !== null && v in OUTCOMES;
@@ -553,6 +543,15 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       const { state, message } = OUTCOMES[result];
       this.dataset.state = state;
 
+      // An empty wall says "be the first", which contradicts "queued for review" sitting
+      // right above it. Only for `queued`: in commit mode (`signed`) the signature really
+      // is on its way, and for `already`/errors nothing is pending. `querySelector`, not
+      // `must()` - the node only exists while the wall is empty, so absence is normal.
+      if (result === 'queued') {
+        const empty = this.querySelector<HTMLElement>('[data-empty-msg]');
+        if (empty) empty.textContent = 'Ur signature is first in line — it lands here once merged';
+      }
+
       // Deliberately NO focus management. The visitor arrives here by navigation from
       // GitHub, so focus is already at the top of a fresh document and nothing was lost -
       // moving it would only draw the global :focus-visible ring around a panel they
@@ -564,7 +563,7 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
         must<HTMLElement>(this, '[data-success-meta]').textContent = message;
       } else if (state === 'already') {
         must<HTMLElement>(this, '[data-already-msg]').textContent = handle
-          ? `@${handle} already signed — thank U!`
+          ? `@${handle} already signed — thank U`
           : message;
       } else {
         must<HTMLElement>(this, '[data-error]').textContent = message;
@@ -574,24 +573,10 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       const status = must<HTMLElement>(this, '[data-status]');
       status.textContent = '';
       setTimeout(() => {
-        status.textContent = handle ? `${message} Signed as @${handle}.` : message;
+        // Messages carry no trailing punctuation, so join with a dash rather than
+        // letting two sentences collide in the announcement.
+        status.textContent = handle ? `${message} — signed as @${handle}` : message;
       }, 40);
-
-      const copy = this.querySelector<HTMLButtonElement>('[data-copy]');
-      copy?.addEventListener('click', () => void this.#onCopy(copy));
-    }
-
-    async #onCopy(button: HTMLButtonElement): Promise<void> {
-      const link = `${window.location.origin}${window.location.pathname}#${this.dataset.anchor ?? ''}`;
-      try {
-        await window.navigator.clipboard.writeText(link);
-        button.textContent = 'Copied ✓';
-      } catch {
-        button.textContent = link; // no clipboard: show it to select by hand
-      }
-      setTimeout(() => {
-        button.textContent = 'Copy link to share';
-      }, 2400);
     }
   }
 

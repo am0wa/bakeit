@@ -1,0 +1,917 @@
+---
+/**
+ * "Sign the manifesto" - form + signer wall.
+ *
+ * The wall is rendered entirely at BUILD TIME from `src/data/signers/*.json`, so it
+ * needs no client JS, works with JS disabled, and cannot fail at runtime. The only
+ * script is the form submit, which POSTs a handle to `/api/sign`; that function commits
+ * a new signature file, and Vercel's auto-build on push turns the commit into a wall
+ * entry roughly a minute later. The success copy says so rather than faking a live count.
+ */
+import Emoji from './Emoji.astro';
+import {
+  COZY_MAX,
+  MAX_RENDERED,
+  avatarUrl,
+  formatCount,
+  initials,
+  profileUrl,
+  safeLabel,
+  type Signer,
+} from './signManifesto';
+
+interface Props {
+  /** Anchor the "copy link to share" button points at; owned by the .mdx heading. */
+  anchor?: string;
+}
+const { anchor = 'sign-the-manifesto' } = Astro.props;
+
+/** One file per signer: the filename is the uniqueness constraint, so no dedupe here. */
+const modules = import.meta.glob<Signer>('../data/signers/*.json', {
+  eager: true,
+  import: 'default',
+});
+
+const signers = Object.values(modules).sort((a, b) => b.at.localeCompare(a.at));
+const total = signers.length;
+const shown = signers.slice(0, MAX_RENDERED);
+const overflow = total - shown.length;
+/** Few signatures look lonely in small pills; give them room instead. */
+const cozy = total > 0 && total <= COZY_MAX;
+
+const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
+---
+
+{/*
+  `data-state` drives the whole form machine; panels are shown purely by CSS from it,
+  and the server-rendered value is already correct so there is no flash on hydration.
+  `not-content` opts this block out of Starlight's markdown styling in one move - every
+  rule in markdown.css ends in `:not(:where(.not-content *))`.
+*/}
+<manifesto-signing
+  id={anchor}
+  class="not-content"
+  data-state="nojs"
+  data-empty={total === 0 ? '' : undefined}
+  data-endpoint="/api/sign"
+  data-anchor={anchor}
+  data-cozy={cozy ? '' : undefined}
+>
+  <div class="ms-card">
+    <form class="ms-form" data-form novalidate>
+      <p class="ms-field">
+        <label for="ms-handle">Ur GitHub name</label>
+        <span class="ms-row">
+          <span class="ms-input-wrap">
+            <span class="ms-at" aria-hidden="true">@</span>
+            <input
+              id="ms-handle"
+              name="handle"
+              type="text"
+              required
+              maxlength="39"
+              placeholder="octocat"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint="send"
+              aria-describedby="ms-handle-err"
+            />
+          </span>
+          {/*
+            `disabled` in the HTML is the no-JS guard: it also blocks implicit submission
+            on Enter, so a no-JS visitor can never be navigated to `?handle=...`.
+            The script removes it on upgrade and uses aria-disabled for busy instead,
+            which keeps the button focusable.
+          */}
+          <button class="ms-btn" type="submit" data-submit disabled>
+            {/*
+              Each state carries its OWN icon, and both states share one grid cell, so
+              the button's width never changes (it sits beside the input, and a resize
+              on submit would lurch the field) while text and icon stay a single
+              centred unit. Keeping the icon in a separate slot left it stranded at the
+              far edge, because the wider label stretched the text away from it.
+            */}
+            <span class="ms-btn-swap">
+              <span class="ms-btn-idle">
+                Sign
+                {/* `monochrome` picks the icon set: true gives emojione-monotone, which
+                    inherits `currentColor` and so renders white on the violet button;
+                    false gives the colour twemoji used in the section heading. */}
+                <Emoji icon="fountain-pen" monochrome={true} size="1.2em" />
+              </span>
+              <span class="ms-btn-busy">
+                Signing&hellip;
+                <span class="ms-spinner" aria-hidden="true"></span>
+              </span>
+            </span>
+          </button>
+        </span>
+        <span class="ms-field-err" id="ms-handle-err" data-err></span>
+        <span class="ms-fine">No account, no sign-up &mdash; nothing else is collected</span>
+      </p>
+
+      {/* Permanently in the DOM and empty, so role=alert announces on text insertion. */}
+      <p class="ms-error" role="alert">
+        <Emoji icon="warning" size="1.1em" />
+        <span data-error></span>
+      </p>
+
+      <noscript>
+        <p class="ms-note">
+          Signing needs JavaScript &mdash; the manifesto itself does not. U can
+          always <a href={repoDir}>add Ur file on GitHub</a> instead.
+        </p>
+      </noscript>
+    </form>
+
+    <div class="ms-success" data-success tabindex="-1">
+      <p class="ms-success-title">
+        <Emoji icon="party-popper" size="1.4em" />
+        <span>U're in, <strong data-success-name></strong>!</span>
+      </p>
+      <p class="ms-success-meta">
+        Ur name joins the wall in about a minute, once the site rebuilds.
+      </p>
+      <button class="ms-ghost" type="button" data-copy>Copy link to share</button>
+    </div>
+
+    <p class="ms-already" data-already tabindex="-1">
+      <Emoji icon="check-mark-button" size="1.2em" />
+      <span><strong data-already-name></strong> already signed &mdash; thank U!</span>
+    </p>
+
+    {/* Never style this element: `.sr-only` lives in @layer starlight.utils and any
+        unlayered position/size rule of ours would silently un-hide it. */}
+    <p class="sr-only" role="status" aria-live="polite" data-status></p>
+  </div>
+
+  <section class="ms-wall" aria-labelledby="ms-wall-title">
+    {/*
+      The link is a SIBLING of the heading, not inside it: this h3 is the accessible
+      name for both the wall section and the list below, so "on git" in there would be
+      announced with every one of them.
+    */}
+    <div class="ms-wall-head">
+      <h3 class="ms-wall-title" id="ms-wall-title">
+        <Emoji icon="purple-heart" size="1.05em" />
+        <span>Signed by<span class="ms-count"> <strong class="ms-count-num">{formatCount(total)}</strong> <span class="ms-count-label">{total === 1 ? 'person' : 'people'}</span></span></span>
+      </h3>
+      <a class="ms-git" href={repoDir}>
+        on git
+        {/* "on git" alone is meaningless in a screen reader's list of links. */}
+        <span class="sr-only"> &mdash; every signature is a file in this repo</span>
+      </a>
+    </div>
+
+    {
+      total === 0 ? (
+        <p class="ms-empty">
+          <Emoji icon="fountain-pen" size="1.5em" />
+          <span>No signatures yet &mdash; be the first. Best kind of first.</span>
+        </p>
+      ) : (
+        <ul class="ms-list" aria-labelledby="ms-wall-title">
+          {shown.map((signer) => {
+            const label = safeLabel(signer.name, signer.handle);
+            return (
+              <li class="ms-sig">
+                <a class="ms-sig-link" href={profileUrl(signer.handle)}>
+                  {/*
+                    Initials sit BEHIND the avatar, so a deleted account (404 image)
+                    reveals them with no onerror handler and no client JS.
+                    referrerpolicy is not optional on the page that links to gdpr.eu:
+                    without it, hotlinking leaks each visitor's IP and referring URL.
+                  */}
+                  <span class="ms-ava">
+                    <span class="ms-ava-fallback" aria-hidden="true">{initials(label)}</span>
+                    <img
+                      class="ms-ava-img"
+                      src={avatarUrl(signer.id)}
+                      alt=""
+                      width="32"
+                      height="32"
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                    />
+                  </span>
+                  <span class="ms-sig-name">{label}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+
+    {overflow > 0 && <p class="ms-rest">&hellip;and {formatCount(overflow)} more signers</p>}
+  </section>
+</manifesto-signing>
+
+<style>
+  /*
+    Placement note: these rules live in a SCOPED <style>, which Astro emits UNLAYERED
+    and after Starlight's `customCss`. Starlight's own styles sit inside
+    @layer starlight.*, so everything here already wins on the cascade - `@layer
+    components` (needed in src/tailwind.css) is unnecessary in this file.
+  */
+
+  manifesto-signing {
+    /* Custom elements are display:inline by default. */
+    display: grid;
+    gap: 1.5rem;
+    /* Starlight's sidebar appears at 50em, so the content column is narrower than the
+       viewport and viewport media queries would lie. Measure the real box instead. */
+    container-type: inline-size;
+
+    /* Kept identical to Card.astro so the two never drift apart. */
+    --ms-radius: 0.33rem;
+    --ms-pad: clamp(1rem, calc(0.125rem + 3vw), 2rem);
+    --ms-inset: var(--sl-color-gray-6);
+  }
+
+  /* ---------- card ---------- */
+  .ms-card {
+    display: grid;
+    gap: 1rem;
+    padding: var(--ms-pad);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: var(--ms-radius);
+    background-color: var(--sl-color-black);
+    /* The site already says "important, and purple" with a thick inline-start edge on
+       blockquotes (src/starlight.css). Reuse that idiom rather than inventing one. */
+    border-inline-start: 4px solid var(--sl-color-purple);
+    transition: border-inline-start-color 300ms ease;
+  }
+  [data-state='success'] .ms-card {
+    border-inline-start-color: var(--sl-color-green);
+  }
+
+  .ms-wall-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-weight: 600;
+    color: var(--sl-color-white);
+    line-height: var(--sl-line-height-headings);
+  }
+  .ms-wall-title {
+    font-size: var(--sl-text-h5);
+  }
+
+  /* ---------- count ---------- */
+  /* Nothing signed yet: the empty panel says so, so "Signed by 0 people" is both
+     redundant and deflating. Hidden, not omitted - the script needs the nodes. */
+  [data-empty] .ms-count {
+    display: none;
+  }
+
+  /* The count lives in the wall heading now: "Signed by 42 people". */
+  .ms-count-num {
+    color: var(--sl-color-text-accent);
+    /* tabular-nums so a roll from 9 to 10 does not shift the label. */
+    font-variant-numeric: tabular-nums;
+  }
+  .ms-count-label {
+    font-weight: 400;
+    color: var(--sl-color-gray-3);
+  }
+
+  /* ---------- form ---------- */
+  .ms-form {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .ms-field {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0;
+  }
+
+  /* Input and Sign share a row. `stretch` makes the button match the input's height
+     exactly, and `wrap` drops it onto its own line in a narrow card. */
+  .ms-row {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .ms-field > label {
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .ms-input-wrap {
+    display: flex;
+    align-items: stretch;
+    /* Grow to fill the row, but never below a usable width before wrapping. */
+    flex: 1 1 12rem;
+    /* Not for the children (they carry their own start/end radii) but so the focus
+       ring below follows the field's rounded outline instead of boxing it. */
+    border-radius: var(--ms-radius);
+  }
+  .ms-at {
+    display: flex;
+    align-items: center;
+    padding-inline: 0.7rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-inline-end: 0;
+    border-start-start-radius: var(--ms-radius);
+    border-end-start-radius: var(--ms-radius);
+    background-color: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-3);
+    font-weight: 600;
+  }
+  /*
+    LOAD-BEARING, not decoration: @astrojs/starlight-tailwind puts
+    `*{border:0 solid}` in @layer base and Preflight is deliberately not imported, so
+    without `appearance`/`border`/`background-color` an input is a borderless white box
+    in dark mode.
+  */
+  .ms-input-wrap input {
+    appearance: none;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-start-end-radius: var(--ms-radius);
+    border-end-end-radius: var(--ms-radius);
+    background-color: var(--ms-inset);
+    color: var(--sl-color-white);
+    /* >= 16px stops iOS zooming the page on focus. */
+    font-size: var(--sl-text-base);
+    font-family: inherit;
+    transition:
+      border-color 120ms ease,
+      background-color 120ms ease;
+  }
+  .ms-input-wrap input::placeholder {
+    color: var(--sl-color-gray-4);
+  }
+  .ms-input-wrap input:hover {
+    border-color: var(--sl-color-gray-4);
+  }
+  .ms-input-wrap input[aria-invalid='true'] {
+    border-color: var(--sl-color-red);
+    background-color: var(--sl-color-red-low);
+  }
+
+  .ms-field-err:empty {
+    display: none;
+  }
+  .ms-field-err {
+    font-size: var(--sl-text-2xs);
+    font-weight: 600;
+    color: var(--sl-color-red-high);
+  }
+
+  /*
+    Focus ring: the `@` prefix and the input are one control visually, but the global
+    `:focus-visible` rule in src/starlight.css lands on the <input> alone - so it drew
+    a ring between the two and bled over the `@` box. Move it to the wrapper and match
+    that rule's 2px/2px so the whole field lights up in the site's accent.
+
+    `outline: none` on the input is safe ONLY because the wrapper draws the ring in its
+    place. Removing the wrapper rule would leave the field with no focus indicator.
+    `:focus-within` rather than `:has(:focus-visible)`: the only focusable child is a
+    text input, for which :focus-visible matches on click too, so the two are equivalent
+    here and this needs no `:has()` support.
+  */
+  .ms-input-wrap:focus-within {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .ms-input-wrap input:focus-visible {
+    outline: none;
+  }
+
+  /* ---------- button ---------- */
+  .ms-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Never shrink the label, and never let the row squash it. */
+    flex: none;
+    gap: 0.5rem;
+    padding: 0.6rem 1.15rem;
+    border: 1px solid var(--sl-color-accent);
+    border-radius: var(--ms-radius);
+    background-color: var(--sl-color-accent);
+    /* Tailwind's literal white token, NOT --sl-color-white, which flips to near-black
+       in light mode and would be unreadable on violet. Still a token, not a hex. */
+    color: var(--color-white);
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      transform 80ms ease,
+      opacity 120ms ease;
+  }
+  .ms-btn:hover {
+    background-color: var(--sl-color-accent-high);
+  }
+  .ms-btn:active {
+    transform: translateY(1px);
+  }
+  .ms-btn:disabled,
+  .ms-btn[aria-disabled='true'] {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  /* Both states stack in one grid cell: the widest sets the button's width, so
+     nothing reflows on submit. `justify-items: center` is load-bearing - the default
+     `stretch` would left-align the shorter label inside the reserved width and pull
+     its icon away from the text. `visibility` keeps the box that `display: none`
+     would collapse, and still hides the text from the a11y tree. */
+  .ms-btn-swap {
+    display: grid;
+    justify-items: center;
+  }
+  .ms-btn-swap > * {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+  }
+
+  .ms-btn-busy {
+    visibility: hidden;
+  }
+  [data-state='submitting'] .ms-btn-idle {
+    visibility: hidden;
+  }
+  [data-state='submitting'] .ms-btn-busy {
+    visibility: visible;
+  }
+
+  .ms-spinner {
+    inline-size: 1em;
+    block-size: 1em;
+    border: 2px solid currentColor;
+    border-block-start-color: transparent;
+    border-radius: 50%;
+    flex: none;
+  }
+  [data-state='submitting'] .ms-spinner {
+    animation: ms-spin 700ms linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* A static ring says nothing; the "Signing..." label carries the state. */
+    .ms-spinner {
+      visibility: hidden;
+    }
+    [data-state='submitting'] .ms-spinner {
+      animation: none;
+    }
+  }
+  @keyframes ms-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .ms-fine,
+  .ms-note {
+    margin: 0;
+    font-size: var(--sl-text-2xs);
+    color: var(--sl-color-gray-3);
+  }
+
+  /* ---------- error strip ---------- */
+  .ms-error {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--sl-color-red);
+    border-radius: var(--ms-radius);
+    background-color: var(--sl-color-red-low);
+    color: var(--sl-color-red-high);
+    font-size: var(--sl-text-sm);
+  }
+  [data-state='error'] .ms-error {
+    display: flex;
+  }
+
+  /* ---------- panel swap ---------- */
+  .ms-success,
+  .ms-already {
+    display: none;
+  }
+  [data-state='success'] .ms-form,
+  [data-state='already'] .ms-form {
+    display: none;
+  }
+  [data-state='success'] .ms-success {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+  [data-state='already'] .ms-already {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  .ms-success-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-size: var(--sl-text-h4);
+    color: var(--sl-color-white);
+  }
+  .ms-success-meta {
+    margin: 0;
+    color: var(--sl-color-gray-2);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-state='success'] .ms-card {
+      animation: ms-glow 900ms ease-out;
+    }
+  }
+  @keyframes ms-glow {
+    from {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--sl-color-accent) 55%, transparent);
+    }
+    to {
+      box-shadow: 0 0 0 16px transparent;
+    }
+  }
+
+  .ms-ghost {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: var(--ms-radius);
+    background: transparent;
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .ms-ghost:hover {
+    background-color: var(--sl-color-accent-low);
+  }
+
+  /* ---------- wall ---------- */
+  .ms-wall {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .ms-wall-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .ms-git {
+    font-size: var(--sl-text-2xs);
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .ms-git:hover {
+    color: var(--sl-color-text-accent);
+    text-decoration: underline;
+  }
+  .ms-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /*
+    `:global()` because the client script clones chips at runtime and clones do not
+    carry the astro-<hash> class; a fully scoped selector would style the SSR chips and
+    silently miss every JS-created one. The scoped ancestor keeps the blast radius here.
+  */
+  .ms-list :global(.ms-sig) {
+    --r: 0deg;
+    /* "Signature" through geometry, not a typeface: italic, a hair of tracking, and a
+       deterministic tilt. Zero network cost, identical on every platform - unlike the
+       `cursive` keyword (Comic Sans on Windows) or a third-party font request. */
+    transform: rotate(var(--r));
+    transition:
+      transform 140ms ease,
+      box-shadow 140ms ease;
+  }
+  .ms-list :global(.ms-sig:nth-child(4n + 1)) {
+    --r: -1.4deg;
+  }
+  .ms-list :global(.ms-sig:nth-child(4n + 2)) {
+    --r: 0.9deg;
+  }
+  .ms-list :global(.ms-sig:nth-child(4n + 3)) {
+    --r: -0.5deg;
+  }
+  .ms-list :global(.ms-sig:nth-child(4n)) {
+    --r: 1.3deg;
+  }
+  .ms-list :global(.ms-sig:hover) {
+    --r: 0deg; /* straightens on hover, so it is always readable */
+  }
+
+  .ms-list :global(.ms-sig-link) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.2rem 0.75rem 0.2rem 0.3rem;
+    border: 1px solid var(--sl-color-purple);
+    border-radius: 999px;
+    background-color: var(--sl-color-purple-low);
+    color: var(--sl-color-purple-high);
+    font-size: var(--sl-text-base);
+    font-style: italic;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .ms-list :global(.ms-sig-link:hover) {
+    border-color: var(--sl-color-accent);
+    background-color: var(--sl-color-accent-low);
+  }
+
+  .ms-list :global(.ms-ava) {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--sl-color-purple);
+    overflow: hidden;
+    flex: none;
+  }
+  .ms-list :global(.ms-ava-fallback) {
+    font-size: 0.65rem;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--color-white);
+    letter-spacing: 0;
+  }
+  .ms-list :global(.ms-ava-img) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  /* Few signatures: bigger type and roomier pills, so the wall reads intimate not empty. */
+  [data-cozy] .ms-list :global(.ms-sig-link) {
+    font-size: var(--sl-text-lg);
+    padding: 0.3rem 0.95rem 0.3rem 0.35rem;
+  }
+  [data-cozy] .ms-list :global(.ms-ava) {
+    inline-size: 2.1rem;
+    block-size: 2.1rem;
+  }
+
+  .ms-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px dashed var(--sl-color-gray-4);
+    border-radius: var(--ms-radius);
+    color: var(--sl-color-gray-2);
+  }
+  .ms-rest {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+</style>
+
+<script>
+  import {
+    formatCount,
+    isValidHandle,
+    must,
+    normalizeHandle,
+    type SignResponse,
+  } from './signManifesto';
+
+  type State = 'nojs' | 'idle' | 'invalid' | 'submitting' | 'success' | 'already' | 'error';
+
+  class ManifestoSigning extends HTMLElement {
+    #wired = false;
+    #busy = false;
+    #endpoint = '/api/sign';
+    #refs!: {
+      form: HTMLFormElement;
+      input: HTMLInputElement;
+      submit: HTMLButtonElement;
+      fieldErr: HTMLElement;
+      error: HTMLElement;
+      status: HTMLElement;
+      success: HTMLElement;
+      successName: HTMLElement;
+      already: HTMLElement;
+      alreadyName: HTMLElement;
+      copy: HTMLButtonElement;
+      countNum: HTMLElement;
+      countLabel: HTMLElement;
+    };
+
+    // connectedCallback, not the constructor: a custom element constructor must not
+    // inspect its children, and this can fire more than once.
+    connectedCallback(): void {
+      if (this.#wired) return;
+      this.#wired = true;
+
+      this.#endpoint = this.dataset.endpoint ?? '/api/sign';
+      this.#refs = {
+        form: must(this, '[data-form]'),
+        input: must(this, '#ms-handle'),
+        submit: must(this, '[data-submit]'),
+        fieldErr: must(this, '[data-err]'),
+        error: must(this, '[data-error]'),
+        status: must(this, '[data-status]'),
+        success: must(this, '[data-success]'),
+        successName: must(this, '[data-success-name]'),
+        already: must(this, '[data-already]'),
+        alreadyName: must(this, '[data-already-name]'),
+        copy: must(this, '[data-copy]'),
+        countNum: must(this, '.ms-count-num'),
+        countLabel: must(this, '.ms-count-label'),
+      };
+
+      // JS is alive: the no-JS guard comes off.
+      this.#refs.submit.disabled = false;
+      this.#refs.form.addEventListener('submit', this.#onSubmit);
+      this.#refs.input.addEventListener('input', this.#clearFieldError);
+      this.#refs.copy.addEventListener('click', () => void this.#onCopy());
+      this.#set('idle');
+    }
+
+    #onSubmit = (event: SubmitEvent): void => {
+      event.preventDefault();
+      if (this.#busy) return; // aria-disabled is advisory; this is the real guard
+
+      const handle = normalizeHandle(this.#refs.input.value);
+      if (!isValidHandle(handle)) {
+        this.#fieldError("That's not a GitHub username — letters, digits and dashes only.");
+        return;
+      }
+      this.#refs.input.value = handle; // reflect the normalisation back to the user
+      void this.#submit(handle);
+    };
+
+    async #submit(handle: string): Promise<void> {
+      this.#set('submitting');
+      try {
+        const res = await fetch(this.#endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ handle }),
+          signal: AbortSignal.timeout(12_000),
+        });
+        const body = (await res.json().catch(() => null)) as SignResponse | null;
+
+        switch (body?.status) {
+          case 'ok':
+            this.#count(body.total);
+            this.#set('success', body.handle ?? handle);
+            return;
+          case 'already_signed':
+            this.#count(body.total);
+            this.#set('already', body.handle ?? handle);
+            return;
+          case 'unknown_handle':
+          case 'invalid_handle':
+            // A message about the field belongs on the field, not in an error strip.
+            this.#fieldError(body.message ?? `No GitHub user called @${handle}.`);
+            return;
+          case 'throttled':
+            this.#set('error', undefined, body.message);
+            return;
+          default:
+            this.#set(
+              'error',
+              undefined,
+              body?.message ?? 'Signing is having a moment — try again in a bit.',
+            );
+        }
+      } catch (error) {
+        const timedOut =
+          error instanceof DOMException &&
+          (error.name === 'TimeoutError' || error.name === 'AbortError');
+        this.#set(
+          'error',
+          undefined,
+          timedOut
+            ? 'That took too long. Check Ur connection and retry.'
+            : "Couldn't reach the signature book. Are U online?",
+        );
+      }
+    }
+
+    #set(state: State, name?: string, message?: string): void {
+      this.dataset.state = state;
+      this.#busy = state === 'submitting';
+      this.#refs.submit.setAttribute('aria-disabled', String(this.#busy));
+      this.#refs.form.setAttribute('aria-busy', String(this.#busy));
+
+      switch (state) {
+        case 'submitting':
+          this.#say('Signing…');
+          break;
+
+        case 'success':
+          this.#refs.successName.textContent = `@${name ?? ''}`;
+          this.#say(`Signed. Welcome, ${name}. Ur name joins the wall after the next build.`);
+          // rAF: the panel's `display` only just changed, and focus() before style
+          // recalc can be dropped by the browser.
+          requestAnimationFrame(() => this.#refs.success.focus());
+          break;
+
+        case 'already':
+          this.#refs.alreadyName.textContent = `@${name ?? ''}`;
+          this.#say(`@${name} already signed.`);
+          requestAnimationFrame(() => this.#refs.already.focus());
+          break;
+
+        case 'error':
+          this.#refs.error.textContent = message ?? '';
+          // Still focusable: busy is aria-disabled, not disabled, so "press again"
+          // needs no travel and focus is never destroyed mid-interaction.
+          this.#refs.submit.focus();
+          break;
+
+        case 'idle':
+          this.#say('');
+          break;
+      }
+    }
+
+    #fieldError(message: string): void {
+      this.dataset.state = 'invalid';
+      this.#busy = false;
+      this.#refs.fieldErr.textContent = message;
+      this.#refs.input.setAttribute('aria-invalid', 'true');
+      // Moving focus reads the field's aria-describedby, which now includes the error.
+      // Do not also push it into the status region: that double-announces.
+      this.#refs.input.focus();
+    }
+
+    #clearFieldError = (): void => {
+      this.#refs.fieldErr.textContent = '';
+      this.#refs.input.removeAttribute('aria-invalid');
+      if (this.dataset.state === 'invalid') this.dataset.state = 'idle';
+    };
+
+    /** The wall is built at deploy time, but the headline number can move now. */
+    #count(total: number | undefined): void {
+      if (typeof total !== 'number') return;
+      this.#refs.countNum.textContent = formatCount(total);
+      this.#refs.countLabel.textContent = total === 1 ? 'person' : 'people';
+      if (total > 0) this.removeAttribute('data-empty'); // first signature: reveal it
+    }
+
+    async #onCopy(): Promise<void> {
+      const link = `${location.origin}${location.pathname}#${this.dataset.anchor ?? ''}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        this.#refs.copy.textContent = 'Copied ✓';
+        this.#say('Link copied.');
+      } catch {
+        this.#refs.copy.textContent = link; // no clipboard: show it to select by hand
+      }
+      setTimeout(() => {
+        this.#refs.copy.textContent = 'Copy link to share';
+      }, 2400);
+    }
+
+    /** role=status only re-announces on a CHANGE, so clear first and set on a later task. */
+    #say(message: string): void {
+      this.#refs.status.textContent = '';
+      if (message) {
+        setTimeout(() => {
+          this.#refs.status.textContent = message;
+        }, 40);
+      }
+    }
+  }
+
+  if (!customElements.get('manifesto-signing')) {
+    customElements.define('manifesto-signing', ManifestoSigning);
+  }
+</script>

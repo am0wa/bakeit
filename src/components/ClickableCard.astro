@@ -27,15 +27,17 @@ const { href, ...cardProps } = Astro.props;
         customElements.define(
           'clickable-card',
           class ClickableCard extends HTMLElement {
-            constructor() {
-              super();
+            // Bind here, not in the constructor: only card 1 is upgraded (the defining script
+            // lives inside it) — cards 2..n run their constructor at the start tag, before any
+            // child or attribute exists, so querySelector/dataset come back empty.
+            connectedCallback() {
+              if (this._bound) return; // re-fires if the node is moved.
+              this._bound = true;
 
-              // Read the target from the data attribute.
-              const href = this.dataset.href;
-              const card = this.querySelector('article.card');
-
-              card?.addEventListener('click', () => {
-                console.log(`Card Clicked ${href}`);
+              // Delegate on the host: nothing to query, and href is read at click time.
+              this.addEventListener('click', (event) => {
+                if (event.target.closest('a')) return; // a real link inside wins.
+                const href = this.dataset.href;
                 if (href) {
                   window.location.href = href;
                 }

@@ -45,6 +45,20 @@ Tailwind Preflight is **not** imported, by design — `@astrojs/starlight-tailwi
 
 Starlight ships no `:focus-visible` styles at all, so `src/starlight.css` supplies the accent focus ring; without it browsers fall back to their own (blue in Chrome).
 
+### Social preview (OpenGraph)
+
+Starlight emits `og:title`/`og:description`/`og:site_name`/`twitter:card` on its own but **never an
+`og:image`**, so the image tags live in the `head` array in `astro.config.mjs`.
+
+- **The URL is absolute and hardcoded** (`https://www.bakeit.dev/og-image.png`). Scrapers do not
+  resolve relative paths, and Astro's `site` is deliberately unset — setting it just to build this
+  URL would also switch on `@astrojs/sitemap`, whose skip warning is one of the expected three.
+  Keep the origin in sync with the OAuth callback host in `api/sign.ts`.
+- **`public/og-image.png` is committed, not built.** `scripts/og-image.mjs` renders it from
+  `src/assets/bakeit-logo.svg` with `sharp` at 1200x630 (the size `twitter:card:
+  summary_large_image` expects). Run it by hand after a logo change. It stays **out** of
+  `npm run build` on purpose — the image changes only when the logo does.
+
 ### Components and icons
 
 `src/components/` holds a small set of hand-rolled components used from `.mdx`. `Card.astro` renders the visual card; `ClickableCard.astro` wraps it in a `<clickable-card>` custom element for click-to-navigate.

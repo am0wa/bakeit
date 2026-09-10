@@ -3,6 +3,8 @@ import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import icon from "astro-icon";
 
+const SITE = 'https://www.bakeit.dev';
+
 // https://astro.build/config
 export default defineConfig({
 	vite: {
@@ -18,6 +20,19 @@ export default defineConfig({
 		}),
 		starlight({
 			favicon: '/bakeit-gradient-favicon.svg',
+			// Starlight emits og:title/description/site_name and twitter:card itself, but never an
+			// og:image. The URL must be absolute (scrapers do not resolve relative paths) and `site`
+			// is deliberately unset, so the origin is spelled out here — same canonical host as the
+			// OAuth callback in api/sign.ts. public/og-image.png is a 1200x630 render of
+			// src/assets/bakeit-logo.svg — regenerate with `node scripts/og-image.mjs`.
+			head: [
+				{ tag: 'meta', attrs: { property: 'og:image', content: `${SITE}/og-image.png` } },
+				{ tag: 'meta', attrs: { property: 'og:image:type', content: 'image/png' } },
+				{ tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+				{ tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+				{ tag: 'meta', attrs: { property: 'og:image:alt', content: 'BakeIT — Modern Software Development Principles' } },
+				{ tag: 'meta', attrs: { name: 'twitter:image', content: `${SITE}/og-image.png` } },
+			],
 			title: '🍰 BakeIT',
 			logo: {
 				src: './src/assets/bakeit-jam.svg',

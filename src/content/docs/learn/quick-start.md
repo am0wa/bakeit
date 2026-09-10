@@ -48,6 +48,7 @@ RT = a + b log2 (n)
 * **20%** of Ur **customers** will likely lead to **80%** of Ur **sales**
 * **20%** of Ur **products** will likely make **80%** of Ur **profits**
 
+
 ## Miller’s Law
 
 :::tip[~7 items in working memory]
@@ -116,6 +117,19 @@ So, if U want to **grow** (and stuck on the lvl of ur incompetence. LOL) – U h
 
 * **Grow from bottom Up** otherwise the Upper lvl would not have input and become Lazily inefficient 🌿
 * **Infrastructure first** if U want to develop agriculture U need to build farms 🧑‍🌾
+
+## Theory of Constraints
+
+> "An hour lost at a bottleneck is an hour lost for the entire system. An hour saved at a non-bottleneck is a mirage"
+> <cite>– Eliyahu Goldratt</cite>
+
+* **Identify the constraint** – the one step the whole flow waits on 🚧
+* **Exploit it** – squeeze max output out of it, never let it idle 🍋
+* **Subordinate the rest** – speeding up a non-constraint buys nothing 🐢
+* **Elevate it** – break the limit: invest, automate, add capacity, redesign 🏗️
+* **Then repeat** – the constraint moves; don't let Ur old rules become the new constraint 🔁
+
+Ur system is exactly as fast as its slowest step – improve anything else and nothing changes ⏳
 
 ## Dunbar's Number
 

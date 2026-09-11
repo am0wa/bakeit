@@ -66,8 +66,14 @@ const repoDir = 'https://github.com/am0wa/bakeit/tree/main/src/data/signers';
       is a plain link, so it works with JS disabled too.
     */}
     <p class="ms-form">
+      {/* Verb first, mechanism second: "Sign in with GitHub" reads as plain
+          authentication and never says what gets signed. "via GitHub" stays ON the
+          button so the redirect is no surprise to anyone who skips the fine print -
+          which is why that line must NOT repeat it. Never `white-space: nowrap` here:
+          the button is a stretched grid item, so this label wraps to two lines in a
+          narrow column by design. */}
       <a class="ms-btn" href="/api/sign" data-signin>
-        Sign in with GitHub
+        Sign the manifesto via GitHub
         <Emoji icon="fountain-pen" monochrome={true} size="1.2em" />
       </a>
       {/* "Profile", not "name": the signature stores handle, numeric id, display name
